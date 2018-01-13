@@ -1,0 +1,29 @@
+---
+- name: " AWS | SUBNET Create {{ item_subnet.name }}"
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpc_id }}"
+    cidr: "{{ item_subnet.cidr }}"
+    az: "{{ item_subnet.az }}"
+    resource_tags:
+      Name: "{{ item_subnet.name }}"
+  register: ret_subnet
+
+- name: AWS | SUBNET enable auto assign public IP
+  ec2_vpc_subnet_auto_assign_public_ip:
+    region: "{{ item_vpc.region }}"
+    subnet: "{{ ret_subnet.subnet.id }}"
+    state: present
+  when: item_subnet.public_ip is defined and item_subnet.public_ip
+
+- set_fact:
+    subnets_pub: "{{ subnets_pub + [ret_subnet.subnet.id] }}"
+  when: item_subnet.route == 'rt_public'
+
+- set_fact:
+    subnets_priv: "{{ subnets_priv + [ret_subnet.subnet.id] }}"
+  when: item_subnet.route == 'rt_private'
+
+- set_fact:
+    subnets_natgw: "{{ subnets_natgw + [ret_subnet.subnet.id] }}"
+  when: item_subnet.route == 'rt_natgw'

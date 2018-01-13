@@ -1,2 +1,3 @@
 ---
-# vars file for mtulio-cloud-vpc
+cloud_provider:
+  - aws

@@ -1,0 +1,36 @@
+---
+- name: AWS | SG - Set SGs
+  set_fact:
+    security_groups: "{{ item_vpc.security_groups }}"
+
+- name: AWS | SG - Expand Global vars in security group values
+  set_fact:
+    security_groups: "{{ security_groups | to_json | replace(item.key, item.value) | from_json }}"
+  with_dict: "{{ security_groups_globals |d(omit) }}"
+
+- name: AWS | SG - Log all security groups rules
+  debug:
+    var: security_groups
+
+- name: AWS | SG - Ensure all Security Groups exists and correctly
+  ec2_group:
+    name: "{{ item.name }}"
+    description: "{{ item.description }}"
+    vpc_id: "{{ vpc_id }}"
+    region: "{{ item_vpc.region }}"
+    rules: "{{ item.rules }}"
+    rules_egress: "{{ item.rules_egress }}"
+    purge_rules: yes
+    purge_rules_egress: yes
+    state: present
+  with_items: "{{ security_groups }}"
+  register: returned_sgs
+
+- name: AWS | SG - Tag name of security groups
+  ec2_tag:
+    region: "{{ item_vpc.region }}"
+    resource: "{{ item.group_id }}"
+    state: present
+    tags:
+      Name: "{{ item.item.name }}"
+  with_items: "{{ returned_sgs.results }}"

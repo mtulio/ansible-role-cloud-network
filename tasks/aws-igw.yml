@@ -1,0 +1,17 @@
+---
+- name: AWS | IGW create
+  ec2_vpc_igw:
+    vpc_id: "{{ vpc_id }}"
+    state: present
+  register: ret_igw
+
+- name: AWS | IGW name
+  ec2_tag:
+    resource: "{{ ret_igw.gateway_id }}"
+    state: present
+    tags:
+      Name: "{{ item_vpc.name }}-igw"
+
+- name: AWS | IGW fact
+  set_fact:
+    vpc_igw: "{{ ret_igw.gateway_id }}"

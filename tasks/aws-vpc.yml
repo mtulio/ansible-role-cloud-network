@@ -1,0 +1,45 @@
+---
+- set_fact:
+    vpc_id: {}
+    vpc_igw: {}
+    ret_vpc: {}
+    subnets_pub: []
+    subnets_priv: []
+    subnets_natgw: []
+
+- name: AWS | VPC create
+  ec2_vpc_net:
+    name: "{{ item_vpc.name }}"
+    cidr_block: "{{ item_vpc.block }}"
+    dns_hostnames: yes
+    dns_support: yes
+    region: us-east-1
+  register: ret_vpc
+  tags: vpc-sg
+
+- set_fact:
+    vpc_id: "{{ ret_vpc.vpc.id }}"
+  tags: vpc-sg
+
+- name: AWS | VPC Subnet
+  include: aws-subnet.yml
+  register: ret_subnet
+  with_items: "{{ item_vpc.subnets }}"
+  loop_control:
+    loop_var: item_subnet
+
+- name: AWS | VPC IGW
+  include: aws-igw.yml
+  when: item_vpc.igw
+
+- name: AWS | VPC NAT GW
+  include: aws-natgw.yml
+  when: item_vpc.nat_gw
+
+- name: AWS | VPC Routing
+  include: aws-routing.yml
+
+- name: AWS | VPC Security Groups
+  include: aws-sg.yml
+  when: item_vpc.security_groups
+  tags: vpc-sg

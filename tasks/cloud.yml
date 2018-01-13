@@ -1,0 +1,10 @@
+---
+- name: Config var for cloud provider
+  debug: msg="CLOUD Provider={{ item_provider }}"
+
+- name: start setup VPC for each provider
+  include: "{{ item_provider }}-vpc.yml"
+  with_items: "{{ networks }}"
+  when: item_vpc.provider == item_provider
+  loop_control:
+    loop_var: item_vpc

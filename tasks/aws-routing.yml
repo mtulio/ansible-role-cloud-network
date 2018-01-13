@@ -1,0 +1,10 @@
+---
+- name: AWS | VPC RT
+  include: aws-rtb.yml
+  with_items: "{{ item_vpc.routes }}"
+  loop_control:
+    loop_var: item_rtb
+
+# Associate subnet to its rt
+# Associate to public rt an igw
+# Associate to private rt an nat_gw

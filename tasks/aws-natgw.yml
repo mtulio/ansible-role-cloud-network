@@ -1,0 +1,6 @@
+---
+- name: AWS | NAT GW Create
+  ec2_vpc_nat_gateway:
+    state: present
+    region: "{{ item_vpc.region }}"
+  register: ret_natgw
