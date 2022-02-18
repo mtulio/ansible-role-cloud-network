@@ -1,0 +1,6 @@
+---
+# VPN (TODO):
+## CGW: Create customer GW (dest addr)
+## VGW: Create
+## VGW: Associate to VPC
+## VPN: Create VPN Conn w/ CGW + VGW

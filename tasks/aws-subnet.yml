@@ -10,29 +10,18 @@
   register: ret_subnet
 
 - name: AWS | SUBNET enable auto assign public IP
-  ec2_vpc_subnet_auto_assign_public_ip:
+  local_ec2_vpc_subnet_auto_public_ip:
     region: "{{ item_vpc.region }}"
     subnet: "{{ ret_subnet.subnet.id }}"
     state: present
-  when: 
-    - item_subnet.public_ip is defined 
-    - item_subnet.public_ip
-  ignore_errors: "{{ ansible_check_mode }}"
+  when: item_subnet.public_ip is defined and item_subnet.public_ip
 
-- name: AWS | SUBNET | make public lists
-  set_fact:
-    subnets_pub: "{{ subnets_pub + [ret_subnet.subnet.id] }}"
-  when: item_subnet.route == 'rt_public'
-  ignore_errors: "{{ ansible_check_mode }}"
+- name: AWS | SUBNET disable auto assign public IP
+  local_ec2_vpc_subnet_auto_public_ip:
+    region: "{{ item_vpc.region }}"
+    subnet: "{{ ret_subnet.subnet.id }}"
+    state: absent
+  when: (item_subnet.public_ip is defined) and not item_subnet.public_ip
 
-- name: AWS | SUBNET | make private lists
-  set_fact:
-    subnets_priv: "{{ subnets_priv + [ret_subnet.subnet.id] }}"
-  when: item_subnet.route == 'rt_private'
-  ignore_errors: "{{ ansible_check_mode }}"
-
-- name: AWS | SUBNET | make Nat GW lists
-  set_fact:
-    subnets_natgw: "{{ subnets_natgw + [ret_subnet.subnet.id] }}"
-  when: item_subnet.route == 'rt_natgw'
-  ignore_errors: "{{ ansible_check_mode }}"
+- set_fact:
+    vpc_subnets: "{{ vpc_subnets + [item_subnet |combine({'subnet_id':ret_subnet.subnet.id})] }}"

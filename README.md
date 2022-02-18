@@ -195,6 +195,14 @@ Example Playbook
            - { role: cloud-iam.mtulio }
 
 
+
+Changelog
+---------
+
+* Support NATGW discovery ID and attach it to the private RTb
+* Support VPC Peering route in route table
+
+
 License
 -------
 
