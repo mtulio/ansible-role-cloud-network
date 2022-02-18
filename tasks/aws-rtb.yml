@@ -1,66 +1,47 @@
 ---
+- set_fact:
+    rtb_routes: []
+    rtb_subnets: []
+
+- name: AWS | RT map NATGW to it's ID
+  set_fact:
+    rtb_routes: "{{ rtb_routes + [{'dest': item.dest, 'gateway_id': vpc_natgw }] }}"
+  when: item.gateway_id is defined and item.gateway_id == 'natgw'
+  with_items: "{{ item_rtb.table }}"
+
 - name: AWS | RT map IGW to it's ID
   set_fact:
-    "{{ item.gateway_id }}": "{{ vpc_igw }}"
+    rtb_routes: "{{ rtb_routes + [{'dest': item.dest, 'gateway_id': vpc_igw }] }}"
+  when: item.gateway_id is defined and item.gateway_id == 'igw'
   with_items: "{{ item_rtb.table }}"
-  when: item_rtb.name == 'rt_public' and item.gateway_id == 'igw'
 
-- name: "AWS | RT {{ item_rtb.name }}"
-  ec2_vpc_route_table:
-    vpc_id: "{{ vpc_id }}"
-    region: "{{ item_vpc.region }}"
-    tags:
-      Name: "{{ item_rtb.name }}"
-    routes: "{{ item_rtb.table |d(omit) }}"
-    purge_routes: no
-  register: ret_rt
-  ignore_errors: "{{ ansible_check_mode }}"
-
-- name: AWS | Rtb getting from VPC
-  ec2_vpc_route_table_facts:
-    filters:
-      vpc-id: "{{ vpc_id }}"
-  register: ret_rt_facts
-  ignore_errors: "{{ ansible_check_mode }}"
-
-- name: AWS | RT set Route Tables vars
+- name: AWS | RT map Peerings to it's ID
   set_fact:
-    "aws_rtb_{{ item.tags.Name }}" : "{{ item.id }}"
-  when: item.tags.Name is defined
-  with_items: "{{ ret_rt_facts.route_tables }}"
+    rtb_routes: "{{ rtb_routes + [{'dest': item.dest, 'gateway_id': vpc_peers|json_query(rt_query)| join(' ') }] }}"
+  vars:
+    rt_query: "[?name=='{{item.peering}}'].id"
+  when: item.peering is defined
+  with_items: "{{ item_rtb.table }}"
 
-- name: AWS | RTb associate public subnets
+- set_fact:
+    rtb_subnets: "{{ rtbs |json_query(rt_query) }}"
+  vars:
+    rt_query: "[?name=='{{item.name}}'].subnets"
+  when: item.name == item_rtb.name
+  with_items: "{{ rtbs }}"
+
+- set_fact:
+    rtb_subnets: "{{ rtb_subnets[0] }}"
+
+- name: "AWS | RTb associate subnets {{ item_rtb.name }}"
   ec2_vpc_route_table:
     lookup: tag
     tags:
       Name: "{{ item_rtb.name }}"
     vpc_id: "{{ vpc_id }}"
     region: "{{ item_vpc.region }}"
-    subnets: "{{ subnets_pub }}"
-    routes: "{{ item_rtb.table |d(omit) }}"
-    purge_routes: no
-  register: ret_rtb_subnets_pub
-  when: item_rtb.name == 'rt_public'
-  ignore_errors: "{{ ansible_check_mode }}"
-
-- name: AWS | RTb associate private subnets
-  ec2_vpc_route_table:
-    lookup: tag
-    tags:
-      Name: "{{ item_rtb.name }}"
-    vpc_id: "{{ vpc_id }}"
-    region: "{{ item_vpc.region }}"
-    subnets: "{{ subnets_priv }}"
-  register: ret_rtb_subnets_priv
-  when: item_rtb.name == 'rt_private'
-
-- name: AWS | RTb associate natgw subnets
-  ec2_vpc_route_table:
-    lookup: tag
-    tags:
-      Name: "{{ item_rtb.name }}"
-    vpc_id: "{{ vpc_id }}"
-    region: "{{ item_vpc.region }}"
-    subnets: "{{ subnets_natgw }}"
-  register: ret_rtb_subnets_natgw
-  when: item_rtb.name == 'rt_natgw'
+    subnets: "{{ rtb_subnets }}"
+    routes: "{{ rtb_routes |d(omit)}}"
+    purge_routes: false
+    purge_subnets: false
+  register: ret_rtb_subnets
