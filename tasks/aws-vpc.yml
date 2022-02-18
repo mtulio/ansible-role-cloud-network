@@ -1,5 +1,6 @@
 ---
-- set_fact:
+- name: AWS | VPC Setting default vars
+  set_fact:
     vpc_id: {}
     vpc_igw: {}
     ret_vpc: {}
@@ -17,9 +18,11 @@
   register: ret_vpc
   tags: vpc-sg
 
-- set_fact:
+- name: AWS | VPC ID
+  set_fact:
     vpc_id: "{{ ret_vpc.vpc.id }}"
   tags: vpc-sg
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: AWS | VPC Subnet
   include: aws-subnet.yml

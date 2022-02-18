@@ -11,14 +11,17 @@
     region: "{{ item_vpc.region }}"
     tags:
       Name: "{{ item_rtb.name }}"
-    routes: "{{ item_rtb.table |d(omit)}}"
+    routes: "{{ item_rtb.table |d(omit) }}"
     purge_routes: no
   register: ret_rt
+  ignore_errors: "{{ ansible_check_mode }}"
 
-- ec2_vpc_route_table_facts:
+- name: AWS | Rtb getting from VPC
+  ec2_vpc_route_table_facts:
     filters:
       vpc-id: "{{ vpc_id }}"
   register: ret_rt_facts
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: AWS | RT set Route Tables vars
   set_fact:
@@ -34,10 +37,11 @@
     vpc_id: "{{ vpc_id }}"
     region: "{{ item_vpc.region }}"
     subnets: "{{ subnets_pub }}"
-    routes: "{{ item_rtb.table |d(omit)}}"
+    routes: "{{ item_rtb.table |d(omit) }}"
     purge_routes: no
   register: ret_rtb_subnets_pub
   when: item_rtb.name == 'rt_public'
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: AWS | RTb associate private subnets
   ec2_vpc_route_table:

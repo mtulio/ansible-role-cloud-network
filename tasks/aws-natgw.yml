@@ -3,4 +3,5 @@
   ec2_vpc_nat_gateway:
     state: present
     region: "{{ item_vpc.region }}"
+    subnet_id : "{{ subnets_natgw[0] }}"
   register: ret_natgw

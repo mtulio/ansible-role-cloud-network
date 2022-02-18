@@ -14,16 +14,25 @@
     region: "{{ item_vpc.region }}"
     subnet: "{{ ret_subnet.subnet.id }}"
     state: present
-  when: item_subnet.public_ip is defined and item_subnet.public_ip
+  when: 
+    - item_subnet.public_ip is defined 
+    - item_subnet.public_ip
+  ignore_errors: "{{ ansible_check_mode }}"
 
-- set_fact:
+- name: AWS | SUBNET | make public lists
+  set_fact:
     subnets_pub: "{{ subnets_pub + [ret_subnet.subnet.id] }}"
   when: item_subnet.route == 'rt_public'
+  ignore_errors: "{{ ansible_check_mode }}"
 
-- set_fact:
+- name: AWS | SUBNET | make private lists
+  set_fact:
     subnets_priv: "{{ subnets_priv + [ret_subnet.subnet.id] }}"
   when: item_subnet.route == 'rt_private'
+  ignore_errors: "{{ ansible_check_mode }}"
 
-- set_fact:
+- name: AWS | SUBNET | make Nat GW lists
+  set_fact:
     subnets_natgw: "{{ subnets_natgw + [ret_subnet.subnet.id] }}"
   when: item_subnet.route == 'rt_natgw'
+  ignore_errors: "{{ ansible_check_mode }}"
