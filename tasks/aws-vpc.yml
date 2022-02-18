@@ -1,28 +1,36 @@
 ---
-- name: AWS | VPC Setting default vars
-  set_fact:
+- set_fact:
     vpc_id: {}
     vpc_igw: {}
     ret_vpc: {}
-    subnets_pub: []
-    subnets_priv: []
-    subnets_natgw: []
+    vpc_subnets: []
+    subnets_rtbs: "{{ item_vpc |json_query('subnets[*].route') |unique |list }}"
+    rtbs_vpc: "{{ item_vpc |json_query('routes[*].name')|list }}"
+    rtbs: []
+    vpc_peers: []
+  tags: always
 
 - name: AWS | VPC create
   ec2_vpc_net:
     name: "{{ item_vpc.name }}"
     cidr_block: "{{ item_vpc.block }}"
-    dns_hostnames: true
-    dns_support: true
-    region: us-east-1
+    dns_hostnames: yes
+    dns_support: yes
+    region: "{{ item_vpc.region }}"
   register: ret_vpc
-  tags: vpc-sg
+  tags: vpc-sg, always
 
-- name: AWS | VPC ID
-  set_fact:
+- set_fact:
     vpc_id: "{{ ret_vpc.vpc.id }}"
-  tags: vpc-sg
-  ignore_errors: "{{ ansible_check_mode }}"
+  check_mode: no
+  tags: vpc-sg, always
+
+- name: AWS | VPC Peering
+  include: aws-peer.yml
+  with_items: "{{ item_vpc.peers|d([]) }}"
+  loop_control:
+    loop_var: item_peer
+  tags: peering
 
 - name: AWS | VPC Subnet
   include: aws-subnet.yml
@@ -30,6 +38,7 @@
   with_items: "{{ item_vpc.subnets }}"
   loop_control:
     loop_var: item_subnet
+  tags: subnets
 
 - name: AWS | VPC IGW
   include: aws-igw.yml
@@ -39,10 +48,22 @@
   include: aws-natgw.yml
   when: item_vpc.nat_gw
 
+- name: AWS | VPN
+  include: aws-vpn.yml
+  when: item_vpc.vpn_connections is defined
+
 - name: AWS | VPC Routing
   include: aws-routing.yml
 
+# ToDo:
+# - name: AWS | VPC endpoint services
+#   include: aws-vpc-endpoint.yml
+#   when: item_vpc.endpoint_services is defined
+#   with_items: "{{ item_vpc.endpoint_services }}"
+#   loop_control:
+#     loop_var: item_epoint
+
 - name: AWS | VPC Security Groups
   include: aws-sg.yml
-  when: item_vpc.security_groups
+  when: item_vpc.security_groups is defined
   tags: vpc-sg
