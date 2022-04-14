@@ -5,7 +5,8 @@
       "tag:Name": "{{ item_vpc.nat_gw_subnet }}"
   register: ret_natgw_net
 
-- debug: var=ret_natgw_net
+- name: AWS | NAT show
+  debug: var=ret_natgw_net
 
 - name: "AWS | NAT GW check subnets"
   fail:
