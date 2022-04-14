@@ -5,23 +5,11 @@
     vpc_id: "{{ vpc_id }}"
     cidr: "{{ item_subnet.cidr }}"
     az: "{{ item_subnet.az }}"
+    map_public: "{{ item_subnet.map_public | d('no') }}"
     resource_tags:
       Name: "{{ item_subnet.name }}"
   register: ret_subnet
 
-- name: AWS | SUBNET enable auto assign public IP
-  local_ec2_vpc_subnet_auto_public_ip:
-    region: "{{ item_vpc.region }}"
-    subnet: "{{ ret_subnet.subnet.id }}"
-    state: present
-  when: item_subnet.public_ip is defined and item_subnet.public_ip
-
-- name: AWS | SUBNET disable auto assign public IP
-  local_ec2_vpc_subnet_auto_public_ip:
-    region: "{{ item_vpc.region }}"
-    subnet: "{{ ret_subnet.subnet.id }}"
-    state: absent
-  when: (item_subnet.public_ip is defined) and not item_subnet.public_ip
-
-- set_fact:
+- name: AWS | SUBNET set on list
+  set_fact:
     vpc_subnets: "{{ vpc_subnets + [item_subnet |combine({'subnet_id':ret_subnet.subnet.id})] }}"
