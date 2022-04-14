@@ -32,12 +32,12 @@ Provider=AWS:
 Role Variables
 --------------
 
-> TODO
+`cloud_networks`: List of networks to be created on the Cloud Provider.
 
 Dependencies
 ------------
 
-`cloud_networks`: List of networks to be created on the Cloud Provider.
+> TBD
 
 Example Playbook
 ----------------
