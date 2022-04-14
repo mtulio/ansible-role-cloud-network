@@ -1,0 +1,34 @@
+---
+- name: AWS | VPCe Services | Init vars
+  set_fact:
+    vpces_rtb_ids: []
+  tags: always
+
+- name: AWS | VPCe Services | Filter Route Tables
+  ec2_vpc_route_table_info:
+    filters:
+      "tag:Name": "{{ item_rtb }}"
+  register: rtbs
+  with_items: "{{ item_vpces.route_table_names }}"
+  loop_control:
+    loop_var: item_rtb
+
+- name: AWS | VPCe Services | Mount Rtb IDs
+  set_fact:
+    vpces_rtb_ids: "{{ vpces_rtb_ids + [item.route_tables[0].id] }}"
+  with_items: "{{ rtbs.results }}"
+
+- name: AWS | VPCe Services | Show table IDS
+  debug:
+    var: vpces_rtb_ids
+
+- name: AWS | VPCe Services | Create
+  ec2_vpc_endpoint:
+    state: present
+    region: "{{ item_vpc.region }}"
+    vpc_id: "{{ vpc_id }}"
+    service: "{{ item_vpces.service }}"
+    route_table_ids: "{{ vpces_rtb_ids }}"
+    tags:
+      Name: "{{ item_vpces.name }}"
+  register: new_vpc_endpoint
