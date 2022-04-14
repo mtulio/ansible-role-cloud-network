@@ -1,5 +1,6 @@
 ---
-- set_fact:
+- name: AWS | RT init lists
+  set_fact:
     rtb_routes: []
     rtb_subnets: []
 
@@ -15,22 +16,24 @@
   when: item.gateway_id is defined and item.gateway_id == 'igw'
   with_items: "{{ item_rtb.table }}"
 
-- name: AWS | RT map Peerings to it's ID
+- name: "AWS | RT map Peerings to it's ID"
   set_fact:
     rtb_routes: "{{ rtb_routes + [{'dest': item.dest, 'gateway_id': vpc_peers|json_query(rt_query)| join(' ') }] }}"
   vars:
-    rt_query: "[?name=='{{item.peering}}'].id"
+    rt_query: "[?name=='{{ item.peering }}'].id"
   when: item.peering is defined
   with_items: "{{ item_rtb.table }}"
 
-- set_fact:
+- name: AWS | RT Set route table's subnets
+  set_fact:
     rtb_subnets: "{{ rtbs |json_query(rt_query) }}"
   vars:
-    rt_query: "[?name=='{{item.name}}'].subnets"
+    rt_query: "[?name=='{{ item.name }}'].subnets"
   when: item.name == item_rtb.name
   with_items: "{{ rtbs }}"
 
-- set_fact:
+- name: AWS | RT Set route table's subnets
+  set_fact:
     rtb_subnets: "{{ rtb_subnets[0] }}"
 
 - name: "AWS | RTb associate subnets {{ item_rtb.name }}"
@@ -41,7 +44,7 @@
     vpc_id: "{{ vpc_id }}"
     region: "{{ item_vpc.region }}"
     subnets: "{{ rtb_subnets }}"
-    routes: "{{ rtb_routes |d(omit)}}"
+    routes: "{{ rtb_routes |d(omit) }}"
     purge_routes: false
     purge_subnets: false
   register: ret_rtb_subnets
