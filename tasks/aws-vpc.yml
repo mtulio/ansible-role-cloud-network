@@ -1,5 +1,6 @@
 ---
-- set_fact:
+- name: AWS | VPC init vars
+  set_fact:
     vpc_id: {}
     vpc_igw: {}
     ret_vpc: {}
@@ -20,7 +21,8 @@
   register: ret_vpc
   tags: vpc-sg, always
 
-- set_fact:
+- name: AWS | VPC get ID
+  set_fact:
     vpc_id: "{{ ret_vpc.vpc.id }}"
   check_mode: no
   tags: vpc-sg, always
@@ -55,13 +57,13 @@
 - name: AWS | VPC Routing
   include: aws-routing.yml
 
-# ToDo:
-# - name: AWS | VPC endpoint services
-#   include: aws-vpc-endpoint.yml
-#   when: item_vpc.endpoint_services is defined
-#   with_items: "{{ item_vpc.endpoint_services }}"
-#   loop_control:
-#     loop_var: item_epoint
+- name: AWS | VPC endpoint services
+  include: aws-vpce-service.yml
+  when: item_vpc.endpoint_services is defined
+  with_items: "{{ item_vpc.endpoint_services }}"
+  loop_control:
+    loop_var: item_vpces
+  tags: vpce
 
 - name: AWS | VPC Security Groups
   include: aws-sg.yml
