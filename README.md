@@ -1,16 +1,16 @@
-cloud-vpc
-=========
+cloud-network
+=============
 
 [![Project Status: Concept - initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
 
-Ansible role to manage all resources in Virtual Private Cloud Infrastructure.
-from service provider - now we are supporting AWS (please help us to improve =] ).
+Ansible role to manage all resources in Cloud Network Infrastructure.
 
-Roadmap for Cloud Providers:
+Supported Cloud Providers:
+
 * AWS - Amazon Web Services
-* GCE - Google Cloud
 
 Main roles to manage:
+
 * Facts
 * VPC
 * Subnets
@@ -20,15 +20,14 @@ Main roles to manage:
 Requirements
 ------------
 
+All Providers:
+
 * ansible >= 2.3
 
-* AWS
+Provider=AWS:
 
-1. boto3
+* boto3
 
-* GCE
-
-> TODO
 
 Role Variables
 --------------
@@ -38,170 +37,126 @@ Role Variables
 Dependencies
 ------------
 
-None
+`cloud_networks`: List of networks to be created on the Cloud Provider.
 
 Example Playbook
 ----------------
 
-* Setup Cloud Network configuration:
+Create the var file `vars/networks/k8s-aws.yaml`:
 
-      - hosts: servers
-        vars:
-          ---
-          #########################
-          # Networks
-          # 172.16-31.0.0/12
-          #
-          ## AWS
-          ## 172.16.0-255.0/24
-          ### us-east-1: 172.16.0-31.0/19
-          ### us-east-2: 172.16.32-63.0/19
-          ### ---------: 172.16.64-95.0/19
-          ### ---------: 172.16.95-127.0/19
-          ### ---------: 172.16.128-159.0/19
-          ### ---------: 172.16.160-191.0/19
-          ### ---------: 172.16.192-223.0/19
-          ### ---------: 172.16.224-255.0/19
-          ## GCLOUD
-          ### 172.17.0-255.0/24
-          #########################
-          networks:
-          - name: vpc_use1_aws
-            block: 172.16.0.0/19
-            provider: aws
-            region: us-east-1
-            igw: yes
-            nat_gw: no
-            nat_gw_subnet: net_natgw_public
-            security_groups: "{{ security_groups | d([]) }}"
-            routes:
-              - name: rt_private
-                table:
-                  - dest: 0.0.0.0/0
-                    gateway_id: natgw
-              - name: rt_public
-                table:
-                  - dest: 0.0.0.0/0
-                    gateway_id: igw
-              # - name: rt_natgw
-              #   table:
-              #     - dest: 0.0.0.0/0
-              #       gateway_id: igw
-            subnets:
-              - name: net_nodes_public_1
-                az: us-east-1b
-                cidr: 172.16.0.0/24
-                route: rt_public
-                public_ip: true
-              - name: net_nodes_private_1
-                az: us-east-1b
-                cidr: 172.16.1.0/24
-                route: rt_private
-              - name: net_nodes_public_2
-                az: us-east-1c
-                cidr: 172.16.2.0/24
-                route: rt_public
-                public_ip: true
-              - name: net_nodes_private_2
-                az: us-east-1c
-                cidr: 172.16.3.0/24
-                route: rt_private
-              - name: net_nodes_public_3
-                az: us-east-1d
-                cidr: 172.16.4.0/24
-                route: rt_public
-                public_ip: true
-              - name: net_nodes_private_3
-                az: us-east-1d
-                cidr: 172.16.5.0/24
-                route: rt_private
-              - name: net_nodes_public_4
-                az: us-east-1e
-                cidr: 172.16.6.0/24
-                route: rt_public
-                public_ip: true
-              - name: net_nodes_private_4
-                az: us-east-1e
-                cidr: 172.16.7.0/24
-                route: rt_private
-              - name: net_elb_public_1
-                az: us-east-1b
-                cidr: 172.16.10.0/24
-                route: rt_public
-                public_ip: true
-              - name: net_elb_public_2
-                az: us-east-1c
-                cidr: 172.16.11.0/24
-                route: rt_public
-                public_ip: true
-              - name: net_elb_public_3
-                az: us-east-1d
-                cidr: 172.16.12.0/24
-                route: rt_public
-                public_ip: true
-              - name: net_elb_public_4
-                az: us-east-1e
-                cidr: 172.16.13.0/24
-                route: rt_public
-                public_ip: true
-              - name: net_vpn_public_1
-                az: us-east-1b
-                cidr: 172.16.29.0/24
-                route: rt_public
-                public_ip: true
-              # - name: net_vpn_public_2
-              #   az: us-east-1e
-              #   cidr: 172.16.30.0/24
-              #   route: rt_public
-              #   public_ip: true
-              # - name: net_natgw_public
-              #   az: us-east-1b
-              #   cidr: 172.16.31.0/26
-              #   route: rt_natgw
-              #   public_ip: true
-          - name: vpc_use1_gce
-            block: 172.17.0.0/20
-            provider: gce
-            region: us-east-1
-            subnets:
-              - name: net-nodes-public-1
-                cidr: 172.17.0.0/24
-              - name: net-nodes-private-1
-                cidr: 172.17.1.0/24
-              - name: net-nodes-public-2
-                cidr: 172.17.2.0/24
-              - name: net-nodes-private-2
-                cidr: 172.17.3.0/24
-              - name: net-nzdes-public-3
-                cidr: 172.17.4.0/24
-              - name: net-nodes-private-3
-                cidr: 172.17.5.0/24
-              - name: net-nodes-public-4
-                cidr: 172.17.6.0/24
-              - name: net-nodes-private-4
-                cidr: 172.17.7.0/24
-              - name: net-elb-public-1
-                cidr: 172.17.10.0/24
-              - name: net-elb-public-2
-                cidr: 172.17.11.0/24
-              - name: net-elb-public-3
-                cidr: 172.17.12.0/24
-              - name: net-elb-public-4
-                cidr: 172.17.13.0/24
-              - name: net-vpn-public-1
-                cidr: 172.17.31.0/24
+```yaml
+---
+cloud_networks:
+  ## AWS South East 1
+  - name: k8s-vpc-use1
+    block: 10.82.0.0/16
+    provider: aws
+    region: us-east-1
+    igw: yes
+    nat_gw: yes
+    nat_gw_subnet: k8s-net-public-natgw-use1-1a
+    nat_gw_name: search-natgw-1a
+    security_groups: "{{ security_groups | d([]) }}"
+    routes:
+      - name: k8s-rt-private
+        table:
+          - dest: 0.0.0.0/0
+            gateway_id: natgw
+      - name: k8s-rt-public
+        table:
+          - dest: 0.0.0.0/0
+            gateway_id: igw
+      - name: k8s-rt-natgw
+        table:
+          - dest: 0.0.0.0/0
+            gateway_id: igw
+    subnets:
+      - name: k8s-net-public-natgw-use1-1a
+        az: us-east-1a
+        cidr: 10.82.0.0/28
+        route: k8s-rt-natgw
+        public_ip: true
 
-        roles:
-           - { role: cloud-iam.mtulio }
+      - name: k8s-net-public-lb-use1-1a
+        az: us-east-1a
+        cidr: 10.82.1.0/24
+        route: k8s-rt-public
+        public_ip: true
+      - name: k8s-net-public-lb-use1-1b
+        az: us-east-1b
+        cidr: 10.82.2.0/24
+        route: k8s-rt-public
+        public_ip: true
 
+      - name: k8s-net-private-lb-use1-1a
+        az: us-east-1a
+        cidr: 10.82.8.0/24
+        route: k8s-rt-private
+        public_ip: false
+      - name: k8s-net-private-lb-use1-1b
+        az: us-east-1b
+        cidr: 10.82.9.0/24
+        route: k8s-rt-private
+        public_ip: false
 
+      - name: k8s-net-public-nodes-use1-1a
+        az: us-east-1a
+        cidr: 10.82.16.0/22
+        route: k8s-rt-public
+        public_ip: true
+      - name: k8s-net-public-nodes-use1-1b
+        az: us-east-1b
+        cidr: 10.82.20.0/22
+        route: k8s-rt-public
+        public_ip: true
 
-Changelog
----------
+      - name: k8s-net-private-nodes-use1-1a
+        az: us-east-1a
+        cidr: 10.82.48.0/22
+        route: k8s-rt-private
+        public_ip: false
+      - name: k8s-net-private-nodes-use1-1b
+        az: us-east-1b
+        cidr: 10.82.52.0/22
+        route: k8s-rt-private
+        public_ip: false
 
-* Support NATGW discovery ID and attach it to the private RTb
-* Support VPC Peering route in route table
+    endpoint_services:
+      - name: s3
+        service: com.amazonaws.us-east-1.s3
+        route_table_names:
+          - k8s-rt-public
+          - k8s-rt-private
 
+```
+
+Create the Plabook `net-create.yaml`:
+
+```yaml
+---
+- hosts: localhost
+
+  # To skip prompt, define the extra-arg 'name'
+  vars_prompt:
+    - name: provider
+      prompt: What is the cloud provider name?
+      private: no
+    - name: name
+      prompt: What is the network name?
+      private: no
+
+  pre_tasks:
+    - include_vars: "vars/networks/{{ name }}-{{ provider }}.yaml"
+
+  roles:
+    - role: mtulio.cloud-vpc
+```
+
+Run the Playbook:
+
+```bash
+ansible-playbook net-create.yaml -e provider=aws -e name=k8s
+```
 
 License
 -------
