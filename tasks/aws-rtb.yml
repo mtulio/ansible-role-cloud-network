@@ -38,11 +38,11 @@
 
 - name: "AWS | RTb associate subnets {{ item_rtb.name }}"
   ec2_vpc_route_table:
+    region: "{{ item_vpc.region }}"
+    vpc_id: "{{ vpc_id }}"
     lookup: tag
     tags:
       Name: "{{ item_rtb.name }}"
-    vpc_id: "{{ vpc_id }}"
-    region: "{{ item_vpc.region }}"
     subnets: "{{ rtb_subnets }}"
     routes: "{{ rtb_routes |d(omit) }}"
     purge_routes: false

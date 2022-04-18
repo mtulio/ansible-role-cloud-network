@@ -14,23 +14,23 @@
 
 - name: AWS | SG - Ensure all Security Groups exists and correctly
   ec2_group:
+    region: "{{ item_vpc.region }}"
+    state: present
+    vpc_id: "{{ vpc_id }}"
     name: "{{ item.name }}"
     description: "{{ item.description }}"
-    vpc_id: "{{ vpc_id }}"
-    region: "{{ item_vpc.region }}"
     rules: "{{ item.rules }}"
     rules_egress: "{{ item.rules_egress }}"
     purge_rules: yes
     purge_rules_egress: yes
-    state: present
   with_items: "{{ security_groups }}"
   register: returned_sgs
 
 - name: AWS | SG - Tag name of security groups
   ec2_tag:
     region: "{{ item_vpc.region }}"
-    resource: "{{ item.group_id }}"
     state: present
+    resource: "{{ item.group_id }}"
     tags:
       Name: "{{ item.item.name }}"
   with_items: "{{ returned_sgs.results }}"

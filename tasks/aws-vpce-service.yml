@@ -6,6 +6,7 @@
 
 - name: AWS | VPCe Services | Filter Route Tables
   ec2_vpc_route_table_info:
+    region: "{{ item_vpc.region }}"
     filters:
       "tag:Name": "{{ item_rtb }}"
   register: rtbs
