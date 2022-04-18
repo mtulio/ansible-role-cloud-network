@@ -13,11 +13,12 @@
 
 - name: AWS | VPC create
   ec2_vpc_net:
+    state: present
+    region: "{{ item_vpc.region }}"
     name: "{{ item_vpc.name }}"
     cidr_block: "{{ item_vpc.block }}"
     dns_hostnames: yes
     dns_support: yes
-    region: "{{ item_vpc.region }}"
   register: ret_vpc
   tags: vpc-sg, always
 

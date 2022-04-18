@@ -2,6 +2,7 @@
 - name: " AWS | SUBNET Create {{ item_subnet.name }}"
   ec2_vpc_subnet:
     state: present
+    region: "{{ item_vpc.region }}"
     vpc_id: "{{ vpc_id }}"
     cidr: "{{ item_subnet.cidr }}"
     az: "{{ item_subnet.az }}"
