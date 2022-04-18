@@ -1,6 +1,7 @@
 ---
 - name: AWS | NAT GW discovery subnet
   ec2_vpc_subnet_facts:
+    region: "{{ item_vpc.region }}"
     filters:
       "tag:Name": "{{ item_vpc.nat_gw_subnet }}"
   register: ret_natgw_net
@@ -24,8 +25,9 @@
 
 - name: AWS | NAT GW name
   ec2_tag:
-    resource: "{{ ret_natgw.nat_gateway_id }}"
     state: present
+    region: "{{ item_vpc.region }}"
+    resource: "{{ ret_natgw.nat_gateway_id }}"
     tags:
       Name: "{{ item_vpc.nat_gw_name |d(item_vpc.name+'-natgw') }}"
 
