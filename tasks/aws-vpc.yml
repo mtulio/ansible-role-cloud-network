@@ -20,13 +20,13 @@
     dns_hostnames: yes
     dns_support: yes
   register: ret_vpc
-  tags: vpc-sg, always
+  tags: sg, always
 
 - name: AWS | VPC get ID
   set_fact:
     vpc_id: "{{ ret_vpc.vpc.id }}"
   check_mode: no
-  tags: vpc-sg, always
+  tags: sg, always
 
 - name: AWS | VPC Peering
   include: aws-peer.yml
@@ -69,4 +69,4 @@
 - name: AWS | VPC Security Groups
   include: aws-sg.yml
   when: item_vpc.security_groups is defined
-  tags: vpc-sg
+  tags: sg
