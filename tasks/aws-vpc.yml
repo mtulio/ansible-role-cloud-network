@@ -19,6 +19,7 @@
     cidr_block: "{{ item_vpc.block }}"
     dns_hostnames: yes
     dns_support: yes
+    tags: "{{ item_vpc.tags | d({}) }}"
   register: ret_vpc
   tags: sg, always
 

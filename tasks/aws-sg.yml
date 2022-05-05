@@ -26,8 +26,9 @@
     description: "{{ item.description }}"
     rules: "{{ item.rules }}"
     rules_egress: "{{ item.rules_egress }}"
-    purge_rules: "{{ item.purge_rules |d('false') }}"
-    purge_rules_egress: "{{ item.purge_rules_egress |d('false') }}"
+    purge_rules: "{{ item.purge_rules |d('no') }}"
+    purge_rules_egress: "{{ item.purge_rules_egress |d('no') }}"
+    tags: "{{ item.tags |d({}) }}"
   with_items: "{{ security_groups }}"
   register: returned_sgs
 
