@@ -1,0 +1,42 @@
+---
+
+- name: debug
+  debug:
+    msg: "DO VPC triggered"
+
+- name: VPC | DO | Project | Check
+  community.digitalocean.digital_ocean_project_info:
+    name: "{{ item_vpc.project }}"
+  register: do_proj
+  ignore_errors: true
+
+- name: VPC | DO | Project | Create when not present
+  community.digitalocean.digital_ocean_project:
+    name: "{{ item_vpc.project }}"
+    state: present
+    description: "{{ item_vpc.project_desc | d(item_vpc.project) }}"
+    purpose: "{{ item_vpc.project_purpose | d('ND') }}"
+    environment: "{{ item_vpc.project_env | d('Development') }}"
+    is_default: "{{ item_vpc.project_default | d(false) }}"
+  when: do_proj.failed
+
+- name: VPC | DO | Create network
+  community.digitalocean.digital_ocean_vpc:
+    state: present
+    name: "{{ item_vpc.name }}"
+    region: "{{ item_vpc.region }}"
+    ip_range: "{{ item_vpc.block }}"
+    default: "{{ item_vpc.default | d(false) }}"
+    description: "{{ item_vpc.description | d(omit) }}"
+
+- name: VPC | DO | Create firewalls
+  community.digitalocean.digital_ocean_firewall:
+    name: "{{ fw.name }}"
+    state: present
+    inbound_rules: "{{ fw.inbound_rules }}"
+    outbound_rules: "{{ fw.outbound_rules }}"
+    droplet_ids: "{{ fw.droplet_ids | d([]) }}"
+    tags: "{{ fw.tags | d([]) }}"
+  with_items: "{{ item_vpc.security_groups }}"
+  loop_control:
+    loop_var: fw
