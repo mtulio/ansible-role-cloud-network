@@ -1,11 +1,15 @@
+---
 galaxy_info:
-  author: Marco Tulio R Braga
-  description: Ansible tole to manage Cloud VPC
-  company: MTOps
-
-  license: GPLv3
-  min_ansible_version: 2.3
-
-  galaxy_tags: []
+  role_name: cloud_network
+  author: mtulio
+  description: Ansible tole to manage Cloud Networks
+  # company: MTOps
+  license: Apache v2
+  min_ansible_version: 4.10
+  platforms: []
+  galaxy_tags:
+    - cloud
+    - network
+    - AWS
 
 dependencies: []
