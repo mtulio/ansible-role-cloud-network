@@ -11,8 +11,8 @@
   ec2_vpc_net:
     name: "{{ item_vpc.name }}"
     cidr_block: "{{ item_vpc.block }}"
-    dns_hostnames: yes
-    dns_support: yes
+    dns_hostnames: true
+    dns_support: true
     region: us-east-1
   register: ret_vpc
   tags: vpc-sg
