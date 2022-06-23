@@ -1,7 +1,4 @@
 ---
-#- name: Config var for cloud provider
-#  debug: msg="CLOUD Provider={{ item_provider }}"
-
 - name: start setup VPC for each provider
   include: "{{ item_vpc.provider }}-vpc.yml"
   with_items: "{{ cloud_networks }}"
