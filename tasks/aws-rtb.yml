@@ -12,7 +12,7 @@
     tags:
       Name: "{{ item_rtb.name }}"
     routes: "{{ item_rtb.table |d(omit)}}"
-    purge_routes: no
+    purge_routes: false
   register: ret_rt
 
 - ec2_vpc_route_table_facts:
@@ -22,7 +22,7 @@
 
 - name: AWS | RT set Route Tables vars
   set_fact:
-    "aws_rtb_{{ item.tags.Name }}" : "{{ item.id }}"
+    "aws_rtb_{{ item.tags.Name }}": "{{ item.id }}"
   when: item.tags.Name is defined
   with_items: "{{ ret_rt_facts.route_tables }}"
 
@@ -35,7 +35,7 @@
     region: "{{ item_vpc.region }}"
     subnets: "{{ subnets_pub }}"
     routes: "{{ item_rtb.table |d(omit)}}"
-    purge_routes: no
+    purge_routes: false
   register: ret_rtb_subnets_pub
   when: item_rtb.name == 'rt_public'
 
