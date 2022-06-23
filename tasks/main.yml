@@ -4,6 +4,3 @@
       with_items: "{{ cloud_provider }}"
       loop_control:
         loop_var: item_provider
-
-  # rescue:
-  # always:
