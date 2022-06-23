@@ -13,4 +13,8 @@
 
 - name: AWS | SUBNET set on list
   set_fact:
-    vpc_subnets: "{{ vpc_subnets + [item_subnet |combine({'subnet_id':ret_subnet.subnet.id})] }}"
+    vpc_subnets: "{{ vpc_subnets + [
+      item_subnet | combine(
+        {
+          'subnet_id':ret_subnet.subnet.id
+        })] }}"

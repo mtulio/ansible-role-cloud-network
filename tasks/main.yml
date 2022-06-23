@@ -1,6 +1,5 @@
 ---
 - block:
-    - include: cloud.yml
-
-  # rescue:
-  # always:
+      - include: cloud.yml
+# rescue:
+# always:

@@ -26,18 +26,18 @@
   when: "ansible_version.full | version_compare('2.5', '>=')"
 
 - block:
-  - name: AWS | PEER retrieve peerings
-    local_ec2_vpc_peering_facts:
-      region: "{{ item_vpc.region }}"
-      filters:
-        "tag:Name": "{{ item_peer.tags.Name }}"
-    register: ret_vpc_peer
+    - name: AWS | PEER retrieve peerings
+      local_ec2_vpc_peering_facts:
+        region: "{{ item_vpc.region }}"
+        filters:
+          "tag:Name": "{{ item_peer.tags.Name }}"
+      register: ret_vpc_peer
 
-  - name: AWS | PEER filter by non deleted peers
-    set_fact:
-      ret_vpc_peer: "{{ item }}"
-    when: (ret_vpc_peer.result is defined) and item.status.code != "deleted"
-    with_items: "{{ ret_vpc_peer.result }}"
+    - name: AWS | PEER filter by non deleted peers
+      set_fact:
+        ret_vpc_peer: "{{ item }}"
+      when: (ret_vpc_peer.result is defined) and item.status.code != "deleted"
+      with_items: "{{ ret_vpc_peer.result }}"
   when: "ansible_version.full | version_compare('2.4', '<')"
 
 - name: AWS | PEER show
@@ -45,4 +45,9 @@
 
 - name: AWS | PEER save facts
   set_fact:
-    vpc_peers: "{{ vpc_peers + [{'name':item_peer.tags.Name,'id':ret_vpc_peer.vpc_peering_connection_id}] }}"
+    vpc_peers: "{{ vpc_peers + [
+        {
+          'name': item_peer.tags.Name,
+          'id': ret_vpc_peer.vpc_peering_connection_id
+        }
+      ] }}"
