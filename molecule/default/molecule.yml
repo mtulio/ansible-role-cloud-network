@@ -1,0 +1,13 @@
+---
+dependency:
+  name: galaxy
+  # options:
+  #   role-file: requirements.yml
+driver:
+  name: delegated
+platforms:
+  - name: localhost
+provisioner:
+  name: ansible
+verifier:
+  name: ansible
