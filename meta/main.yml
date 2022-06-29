@@ -4,12 +4,18 @@ galaxy_info:
   author: mtulio
   description: Ansible tole to manage Cloud Networks
   # company: MTOps
-  license: Apache v2
-  min_ansible_version: 4.10
+  license: Apache-2.0
+  min_ansible_version: "4.1"
   platforms: []
   galaxy_tags:
     - cloud
     - network
-    - AWS
+    - aws
+    - amazon
+    - digitalocean
+
+  cloud_platforms:
+    - amazon
+    - digitalocean
 
 dependencies: []
