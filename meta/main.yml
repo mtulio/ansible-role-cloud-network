@@ -3,10 +3,17 @@ galaxy_info:
   role_name: cloud_network
   author: mtulio
   description: Ansible tole to manage Cloud Networks
-  # company: MTOps
   license: Apache-2.0
   min_ansible_version: "4.1"
-  platforms: []
+
+  platforms:
+    - name: EL
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+
   galaxy_tags:
     - cloud
     - network
