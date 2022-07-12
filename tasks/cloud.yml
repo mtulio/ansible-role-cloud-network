@@ -1,6 +1,6 @@
 ---
 - name: start setup VPC for each provider
   include: "{{ item_vpc.provider }}-vpc.yml"
-  with_items: "{{ cloud_networks }}"
+  with_items: "{{ cloud_networks | d([]) }}"
   loop_control:
     loop_var: item_vpc
