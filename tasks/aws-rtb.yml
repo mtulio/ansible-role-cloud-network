@@ -9,22 +9,33 @@
     rtb_routes: "{{ rtb_routes + [
         {
           'dest': item.dest,
-          'gateway_id': vpc_natgw
+          'gateway_id': gateways.natgw[item.target]
         }
       ] }}"
-  when: item.gateway_id is defined and item.gateway_id == 'natgw'
-  with_items: "{{ item_rtb.table }}"
+  when: item.gw_type is defined and item.gw_type == 'natgw'
+  with_items: "{{ item_rtb.routes | d([]) }}"
 
 - name: AWS | RT map IGW to it's ID
   set_fact:
     rtb_routes: "{{ rtb_routes + [
         {
           'dest': item.dest,
-          'gateway_id': vpc_igw
+          'gateway_id': gateways.igw
         }
       ] }}"
-  when: item.gateway_id is defined and item.gateway_id == 'igw'
-  with_items: "{{ item_rtb.table }}"
+  when: item.gw_type is defined and item.gw_type == 'igw'
+  with_items: "{{ item_rtb.routes | d([]) }}"
+
+- name: AWS | RT map CAGW to it's ID
+  set_fact:
+    rtb_routes: "{{ rtb_routes + [
+        {
+          'dest': item.dest,
+          'gateway_id': gateways.cagw
+        }
+      ] }}"
+  when: item.gw_type is defined and item.gw_type == 'cagw'
+  with_items: "{{ item_rtb.routes | d([]) }}"
 
 - name: "AWS | RT map Peerings to it's ID"
   set_fact:
@@ -41,7 +52,7 @@
 
 - name: AWS | RT Set route table's subnets
   set_fact:
-    rtb_subnets: "{{ rtbs |json_query(rt_query) }}"
+    rtb_subnets: "{{ rtbs | json_query(rt_query) }}"
   vars:
     rt_query: "[?name=='{{ item.name }}'].subnets"
   when: item.name == item_rtb.name
@@ -52,7 +63,7 @@
     rtb_subnets: "{{ rtb_subnets[0] }}"
 
 - name: "AWS | RTb associate subnets {{ item_rtb.name }}"
-  ec2_vpc_route_table:
+  local_ec2_vpc_route_table:
     region: "{{ item_vpc.region }}"
     vpc_id: "{{ vpc_id }}"
     lookup: tag

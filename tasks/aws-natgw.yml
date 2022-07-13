@@ -1,9 +1,9 @@
 ---
-- name: AWS | NAT GW discovery subnet
+- name: AWS | NAT GW | discovery subnet
   ec2_vpc_subnet_info:
     region: "{{ item_vpc.region }}"
     filters:
-      "tag:Name": "{{ item_vpc.nat_gw_subnet }}"
+      "tag:Name": "{{ natgw.subnet }}"
   register: ret_natgw_net
 
 - name: AWS | NAT show
@@ -12,7 +12,7 @@
 
 - name: "AWS | NAT GW check subnets"
   fail:
-    msg: "AWS | NAT GW failed: no subnets named {{ item_vpc.nat_gw_subnet }}"
+    msg: "AWS | NAT GW failed: no subnets named {{ natgw.subnet }}"
   when: ret_natgw_net.subnets | length < 1
 
 - name: AWS | NAT GW Create
@@ -20,12 +20,18 @@
     state: present
     region: "{{ item_vpc.region }}"
     subnet_id: "{{ ret_natgw_net.subnets[0].id }}"
-    if_exist_do_not_create: true
-    wait: true
-    tags: "{{ item_vpc.tags|d({}) | combine({'Name':item_vpc.name+'-natgw'}) }}"
+    if_exist_do_not_create: "{{ natgw.ignore_exists | d(true) }}"
+    wait: "{{ natgw.wait | d(true) }}"
+    tags: "{{ natgw.tags|d({}) | combine({'Name':natgw.name}) }}"
   register: ret_natgw
 
 - name: AWS | IGW fact
   set_fact:
     vpc_natgw: "{{ ret_natgw.nat_gateway_id }}"
+    gateways: "{{ gateways | combine({
+        'natgw': gateways.natgw | combine({
+            natgw.name:ret_natgw.nat_gateway_id
+          })
+        })
+      }}"
     cloud_network_state: "{{ cloud_network_state | combine({'natgw':ret_natgw.nat_gateway_id}) }}"
