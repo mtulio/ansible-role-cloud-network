@@ -5,11 +5,13 @@
     vpc_igw: {}
     ret_vpc: {}
     vpc_subnets: []
-    subnets_rtbs: "{{ item_vpc |json_query('subnets[*].route') |unique |list }}"
-    rtbs_vpc: "{{ item_vpc |json_query('routes[*].name')|list }}"
+    subnets_rtbs: "{{ item_vpc |json_query('subnets[*].route_table') |unique |list }}"
+    rtbs_vpc: "{{ item_vpc |json_query('route_tables[*].name') |list }}"
     rtbs: []
     vpc_peers: []
     cloud_network_state: {}
+    gateways:
+      natgw: {}
   tags: always
 
 - name: AWS | VPC create
@@ -48,8 +50,7 @@
 
 - name: AWS | VPC Internet Gateway
   include_tasks: aws-igw.yml
-  when: item_vpc.igw
-  #when: item_vpc.internet_gateway|d(false)
+  when: item_vpc.internet_gateway | d(false)
 
 - name: AWS | VPC Carrier Gateway
   include_tasks: aws-cagw.yml
@@ -57,10 +58,9 @@
 
 - name: AWS | VPC NAT Gateway
   include_tasks: aws-natgw.yml
-  when: item_vpc.nat_gw
-  # with_items: "{{ item_vpc.nat_gateways }}"
-  # loop_control:
-  #   loop_var: item_natgw
+  with_items: "{{ item_vpc.nat_gateways | d([]) }}"
+  loop_control:
+    loop_var: natgw
 
 - name: AWS | VPN
   include_tasks: aws-vpn.yml
@@ -85,6 +85,3 @@
 - name: VPC | Update Global states
   set_fact:
     cloud_networks_state: "{{ cloud_networks_state + [cloud_network_state] }}"
-
-- debug: var=cloud_network_state
-- debug: var=cloud_networks_state

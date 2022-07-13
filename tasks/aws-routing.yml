@@ -4,19 +4,15 @@
     rtbs: "{{ rtbs + [
         {
           'name': item,
-          'subnets': vpc_subnets |json_query(rt_query) |unique
+          'subnets': vpc_subnets | json_query(rt_query) | unique
         }
       ] }}"
   vars:
-    rt_query: "[?route=='{{ item }}'].subnet_id"
-  with_items: "{{ rtbs_vpc |union(subnets_rtbs) |unique }}"
+    rt_query: "[?route_table=='{{ item }}'].subnet_id"
+  with_items: "{{ rtbs_vpc | union(subnets_rtbs) | unique }}"
 
 - name: AWS | VPC RT
   include: aws-rtb.yml
-  with_items: "{{ item_vpc.routes }}"
+  with_items: "{{ item_vpc.route_tables | d([]) }}"
   loop_control:
     loop_var: item_rtb
-
-# Associate subnet to its rt
-# Associate to public rt an igw
-# Associate to private rt an nat_gw
