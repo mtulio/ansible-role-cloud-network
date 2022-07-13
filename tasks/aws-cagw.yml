@@ -9,5 +9,7 @@
 
 - name: AWS | CAGW fact
   set_fact:
-    cloud_network_state: "{{ cloud_network_state | combine({'cagw':ret_cagw.carrier_gateway_id}) }}"
+    cloud_network_state: "{{ cloud_network_state
+        | combine({'cagw':ret_cagw.carrier_gateway_id})
+      }}"
     gateways: "{{ gateways | combine({'cagw':ret_cagw.carrier_gateway_id}) }}"

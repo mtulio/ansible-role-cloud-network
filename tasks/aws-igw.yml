@@ -12,4 +12,6 @@
   set_fact:
     vpc_igw: "{{ ret_igw.gateway_id }}"
     gateways: "{{ gateways | combine({'igw':ret_igw.gateway_id}) }}"
-    cloud_network_state: "{{ cloud_network_state | combine({'igw':ret_igw.gateway_id}) }}"
+    cloud_network_state: "{{ cloud_network_state
+        | combine({'igw':ret_igw.gateway_id})
+      }}"

@@ -34,4 +34,6 @@
           })
         })
       }}"
-    cloud_network_state: "{{ cloud_network_state | combine({'natgw':ret_natgw.nat_gateway_id}) }}"
+    cloud_network_state: "{{ cloud_network_state
+        | combine({'natgw':ret_natgw.nat_gateway_id})
+      }}"

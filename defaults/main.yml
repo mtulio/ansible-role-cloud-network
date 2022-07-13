@@ -1,3 +1,4 @@
 ---
-#cloud_networks: []
-#security_groups_globals: {}
+# Temporary disable due is impacting in collection level definition
+# cloud_networks: []
+# security_groups_globals: {}
