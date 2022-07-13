@@ -15,7 +15,7 @@
     vpc_subnets: "{{ vpc_subnets + [
       item_subnet | combine(
         {
-          'subnet_id':ret_subnet.subnet.id
+          'subnet_id': ret_subnet.subnet.id
         })] }}"
     cloud_network_state: "{{ cloud_network_state
       | combine({'subnets': cloud_network_state.subnets|d([]) + [

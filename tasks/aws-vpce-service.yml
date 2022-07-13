@@ -10,7 +10,7 @@
     filters:
       "tag:Name": "{{ item_rtb }}"
   register: rtbs
-  with_items: "{{ item_vpces.route_table_names }}"
+  with_items: "{{ item_vpces.route_tables }}"
   loop_control:
     loop_var: item_rtb
 
