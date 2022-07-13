@@ -5,7 +5,10 @@
     vpc_igw: {}
     ret_vpc: {}
     vpc_subnets: []
-    subnets_rtbs: "{{ item_vpc |json_query('subnets[*].route_table') |unique |list }}"
+    subnets_rtbs: "{{ item_vpc
+        | json_query('subnets[*].route_table')
+        | unique |list
+      }}"
     rtbs_vpc: "{{ item_vpc |json_query('route_tables[*].name') |list }}"
     rtbs: []
     vpc_peers: []
@@ -29,7 +32,9 @@
 - name: AWS | VPC get ID
   set_fact:
     vpc_id: "{{ ret_vpc.vpc.id }}"
-    cloud_network_state: "{{ cloud_network_state | combine({'id':ret_vpc.vpc.id}) }}"
+    cloud_network_state: "{{ cloud_network_state
+        | combine({'id':ret_vpc.vpc.id})
+      }}"
   check_mode: false
   tags: sg, always
 
