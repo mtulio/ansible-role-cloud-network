@@ -59,7 +59,7 @@
     tags:
       Name: "{{ item_rtb.name }}"
     subnets: "{{ rtb_subnets }}"
-    routes: "{{ rtb_routes |d(omit) }}"
+    routes: "{{ rtb_routes |d([]) }}"
     purge_routes: false
     purge_subnets: false
   register: ret_rtb_subnets
