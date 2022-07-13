@@ -1,0 +1,12 @@
+---
+- name: AWS | CAGW create
+  local_ec2_vpc_cagw:
+    state: present
+    vpc_id: "{{ vpc_id }}"
+    tags:
+      Name: "{{ item_vpc.name }}-cagw"
+  register: ret_cagw
+
+- name: AWS | CAGW fact
+  set_fact:
+    cloud_network_state: "{{ cloud_network_state | combine({'cagw':ret_cagw.carrier_gateway_id}) }}"
