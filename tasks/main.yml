@@ -1,6 +1,3 @@
 ---
 
-- block:
-  - include: cloud.yml
-# rescue:
-# always:
+- include_tasks: cloud.yml

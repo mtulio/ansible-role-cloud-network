@@ -9,6 +9,7 @@
     rtbs_vpc: "{{ item_vpc |json_query('routes[*].name')|list }}"
     rtbs: []
     vpc_peers: []
+    cloud_network_state: {}
   tags: always
 
 - name: AWS | VPC create
@@ -17,8 +18,8 @@
     region: "{{ item_vpc.region }}"
     name: "{{ item_vpc.name }}"
     cidr_block: "{{ item_vpc.block }}"
-    dns_hostnames: true
-    dns_support: true
+    dns_hostnames: "{{ item_vpc.dns_hostnames | d(true) }}"
+    dns_support: "{{ item_vpc.dns_support | d(true) }}"
     tags: "{{ item_vpc.tags | d({}) }}"
   register: ret_vpc
   tags: sg, always
@@ -26,41 +27,50 @@
 - name: AWS | VPC get ID
   set_fact:
     vpc_id: "{{ ret_vpc.vpc.id }}"
+    cloud_network_state: "{{ cloud_network_state | combine({'id':ret_vpc.vpc.id}) }}"
   check_mode: false
   tags: sg, always
 
 - name: AWS | VPC Peering
-  include: aws-peer.yml
-  with_items: "{{ item_vpc.peers|d([]) }}"
+  include_tasks: aws-peer.yml
+  with_items: "{{ item_vpc.peers | d([]) }}"
   loop_control:
     loop_var: item_peer
   tags: peering
 
 - name: AWS | VPC Subnet
-  include: aws-subnet.yml
+  include_tasks: aws-subnet.yml
   register: ret_subnet
   with_items: "{{ item_vpc.subnets }}"
   loop_control:
     loop_var: item_subnet
   tags: subnets
 
-- name: AWS | VPC IGW
-  include: aws-igw.yml
+- name: AWS | VPC Internet Gateway
+  include_tasks: aws-igw.yml
   when: item_vpc.igw
+  #when: item_vpc.internet_gateway|d(false)
 
-- name: AWS | VPC NAT GW
-  include: aws-natgw.yml
+- name: AWS | VPC Carrier Gateway
+  include_tasks: aws-cagw.yml
+  when: item_vpc.carrier_gateway | d(false)
+
+- name: AWS | VPC NAT Gateway
+  include_tasks: aws-natgw.yml
   when: item_vpc.nat_gw
+  # with_items: "{{ item_vpc.nat_gateways }}"
+  # loop_control:
+  #   loop_var: item_natgw
 
 - name: AWS | VPN
-  include: aws-vpn.yml
+  include_tasks: aws-vpn.yml
   when: item_vpc.vpn_connections is defined
 
 - name: AWS | VPC Routing
-  include: aws-routing.yml
+  include_tasks: aws-routing.yml
 
 - name: AWS | VPC endpoint services
-  include: aws-vpce-service.yml
+  include_tasks: aws-vpce-service.yml
   when: item_vpc.endpoint_services is defined
   with_items: "{{ item_vpc.endpoint_services }}"
   loop_control:
@@ -68,6 +78,13 @@
   tags: vpce
 
 - name: AWS | VPC Security Groups
-  include: aws-sg.yml
+  include_tasks: aws-sg.yml
   when: item_vpc.security_groups is defined
   tags: sg
+
+- name: VPC | Update Global states
+  set_fact:
+    cloud_networks_state: "{{ cloud_networks_state + [cloud_network_state] }}"
+
+- debug: var=cloud_network_state
+- debug: var=cloud_networks_state
