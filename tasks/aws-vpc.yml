@@ -74,6 +74,11 @@
 - name: AWS | VPC Routing
   include_tasks: aws-routing.yml
 
+- name: AWS | VPC Security Groups
+  include_tasks: aws-sg.yml
+  when: item_vpc.security_groups is defined
+  tags: sg
+
 - name: AWS | VPC endpoint services
   include_tasks: aws-vpce-service.yml
   when: item_vpc.endpoint_services is defined
@@ -81,11 +86,6 @@
   loop_control:
     loop_var: item_vpces
   tags: vpce
-
-- name: AWS | VPC Security Groups
-  include_tasks: aws-sg.yml
-  when: item_vpc.security_groups is defined
-  tags: sg
 
 - name: VPC | Update Global states
   set_fact:

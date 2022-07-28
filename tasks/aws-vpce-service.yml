@@ -1,27 +1,35 @@
 ---
-- name: AWS | VPCe Services | Init vars
-  set_fact:
-    vpces_rtb_ids: []
-  tags: always
-
-- name: AWS | VPCe Services | Filter Route Tables
-  ec2_vpc_route_table_info:
-    region: "{{ item_vpc.region }}"
-    filters:
-      "tag:Name": "{{ item_rtb }}"
-  register: rtbs
-  with_items: "{{ item_vpces.route_tables }}"
-  loop_control:
-    loop_var: item_rtb
-
-- name: AWS | VPCe Services | Mount Rtb IDs
-  set_fact:
-    vpces_rtb_ids: "{{ vpces_rtb_ids + [item.route_tables[0].id] }}"
-  with_items: "{{ rtbs.results }}"
-
-- name: AWS | VPCe Services | Show table IDS
+- name: AWS | VPCe Services | Init
   debug:
-    var: vpces_rtb_ids
+    msg: "Endpoint service name: {{ item_vpces.service }}"
+
+- name: AWS | VPCe Services | Lookup Route tables
+  block:
+
+  - name: AWS | VPCe Services | Init vars
+    set_fact:
+      vpces_rtb_ids: []
+
+  - name: AWS | VPCe Services | Filter Route Tables
+    ec2_vpc_route_table_info:
+      region: "{{ item_vpc.region }}"
+      filters:
+        "tag:Name": "{{ item_rtb }}"
+    register: rtbs
+    with_items: "{{ item_vpces.route_tables | d([]) }}"
+    loop_control:
+      loop_var: item_rtb
+
+  - name: AWS | VPCe Services | Mount Rtb IDs
+    set_fact:
+      vpces_rtb_ids: "{{ vpces_rtb_ids + [item.route_tables[0].id] }}"
+    with_items: "{{ rtbs.results }}"
+
+  - name: AWS | VPCe Services | Show table IDS
+    debug:
+      var: vpces_rtb_ids
+
+  when: item_vpces.route_tables | d([]) | length > 0
 
 - name: AWS | VPCe Services | Create
   ec2_vpc_endpoint:
@@ -29,7 +37,13 @@
     region: "{{ item_vpc.region }}"
     vpc_id: "{{ vpc_id }}"
     service: "{{ item_vpces.service }}"
-    route_table_ids: "{{ vpces_rtb_ids }}"
+    route_table_ids: "{{ vpces_rtb_ids | d(omit) }}"
+    vpc_endpoint_security_groups: "{{ item_vpces.security_groups | d(omit) }}"
+    vpc_endpoint_subnets: "{{ item_vpces.subnets | d(omit) }}"
+    vpc_endpoint_type: "{{ item_vpces.type | d('Gateway') }}"
+    validate_certs: "{{ item_vpces.validate_certs | d(omit) }}"
+    policy_file: "{{ item_vpces.policy_file | d(omit) }}"
+    policy: "{{ item_vpces.policy | d(omit) }}"
     tags:
       Name: "{{ item_vpces.name }}"
   register: new_vpc_endpoint
