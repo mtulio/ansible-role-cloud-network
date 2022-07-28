@@ -1,14 +1,14 @@
 ---
-- name: AWS | VPCe Services | Init
+- name: AWS | VPCe Services | Debug VPCe
   debug:
-    msg: "Endpoint service name: {{ item_vpces.service }}"
+    var: item_vpces
 
-- name: AWS | VPCe Services | Lookup Route tables
+- name: AWS | VPCe Services | Init Locla Vars
+  set_fact:
+    vpce_resources: {}
+
+- name: AWS | VPCe Services | Discovery Route tables IDs
   block:
-
-  - name: AWS | VPCe Services | Init vars
-    set_fact:
-      vpces_rtb_ids: []
 
   - name: AWS | VPCe Services | Filter Route Tables
     ec2_vpc_route_table_info:
@@ -22,14 +22,63 @@
 
   - name: AWS | VPCe Services | Mount Rtb IDs
     set_fact:
-      vpces_rtb_ids: "{{ vpces_rtb_ids + [item.route_tables[0].id] }}"
+      vpce_resources: "{{ vpce_resources |combine({
+          'rtb_ids': vpce_resources['rtb_ids']|d([]) + [item.route_tables[0].id]
+        }) }}"
     with_items: "{{ rtbs.results }}"
 
-  - name: AWS | VPCe Services | Show table IDS
-    debug:
-      var: vpces_rtb_ids
-
   when: item_vpces.route_tables | d([]) | length > 0
+
+
+- name: AWS | VPCe Services | Discovery Security Groups IDs
+  block:
+
+  - name: AWS | VPCe Services | Filter Security Groups
+    amazon.aws.ec2_group_info:
+      region: "{{ item_vpc.region }}"
+      filters:
+        group-name: "{{ item_sg }}"
+    register: sgs
+    with_items: "{{ item_vpces.security_group_names | d([]) }}"
+    loop_control:
+      loop_var: item_sg
+
+  - debug: var=sgs
+
+  - name: AWS | VPCe Services | Mount SG IDs
+    set_fact:
+      vpce_resources: "{{ vpce_resources |combine({
+          'sg_ids': vpce_resources['sg_ids']|d([]) + [item.security_groups[0].group_id]
+        }) }}"
+    with_items: "{{ sgs.results }}"
+
+  when: item_vpces.security_group_names | d([]) | length > 0
+
+- name: AWS | VPCe Services | Discovery Subnet IDs
+  block:
+
+  - name: AWS | VPCe Services | Filter Subnets by Name
+    amazon.aws.ec2_vpc_subnet_info:
+      region: "{{ item_vpc.region }}"
+      filters:
+        "tag:Name": "{{ item_net }}"
+    register: nets
+    with_items: "{{ item_vpces.subnet_names | d([]) }}"
+    loop_control:
+      loop_var: item_net
+
+  - debug: var=nets
+
+  - name: AWS | VPCe Services | Mount Subnet IDs
+    set_fact:
+      vpce_resources: "{{ vpce_resources |combine({
+          'net_ids': vpce_resources['net_ids']|d([]) + [item.subnets[0].id]
+        }) }}"
+    with_items: "{{ nets.results }}"
+
+  when: item_vpces.subnet_names | d([]) | length > 0
+
+- debug: var=vpce_resources
 
 - name: AWS | VPCe Services | Create
   ec2_vpc_endpoint:
@@ -37,9 +86,9 @@
     region: "{{ item_vpc.region }}"
     vpc_id: "{{ vpc_id }}"
     service: "{{ item_vpces.service }}"
-    route_table_ids: "{{ vpces_rtb_ids | d(omit) }}"
-    vpc_endpoint_security_groups: "{{ item_vpces.security_groups | d(omit) }}"
-    vpc_endpoint_subnets: "{{ item_vpces.subnets | d(omit) }}"
+    route_table_ids: "{{ vpce_resources['rtb_ids'] | d(omit) }}"
+    vpc_endpoint_security_groups: "{{ vpce_resources['sg_ids'] | d(omit) }}"
+    vpc_endpoint_subnets: "{{ vpce_resources['net_ids'] | d(omit) }}"
     vpc_endpoint_type: "{{ item_vpces.type | d('Gateway') }}"
     validate_certs: "{{ item_vpces.validate_certs | d(omit) }}"
     policy_file: "{{ item_vpces.policy_file | d(omit) }}"
