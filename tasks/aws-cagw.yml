@@ -1,8 +1,13 @@
 ---
+# Requires: https://github.com/ansible-collections/community.aws/pull/1353
+# Using cloud_network standalone, you should include the module in the local
+# modules path:
+# ansible-config dump |grep DEFAULT_MODULE_PATH
 - name: AWS | CAGW create
-  local_ec2_vpc_cagw:
+  local_ec2_carrier_gateway:
     state: present
     vpc_id: "{{ vpc_id }}"
+    region: "{{ item_vpc.region }}"
     tags:
       Name: "{{ item_vpc.name }}-cagw"
   register: ret_cagw
