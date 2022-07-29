@@ -90,3 +90,7 @@
 - name: VPC | Update Global states
   set_fact:
     cloud_networks_state: "{{ cloud_networks_state + [cloud_network_state] }}"
+
+- name: VPC | Show Global State
+  debug:
+    var: cloud_networks_state
