@@ -1,53 +1,73 @@
 ---
 
-# Use custom module, latest, module when running older (<2.5) ansible
-- name: AWS | PEER create using adapted module
-  local_ec2_vpc_peer:
-    state: present
-    region: "{{ item_peer.region |d(item_vpc.region) }}"
-    vpc_id: "{{ vpc_id }}"
-    peer_owner_id: "{{ item_peer.peer_owner_id |d(omit) }}"
-    peer_vpc_id: "{{ item_peer.peer_vpc_id }}"
-    peer_region: "{{ item_peer.peer_region |d(omit) }}"
-    tags: "{{ item_peer.tags }}"
-  register: ret_vpc_peer
-  when: "ansible_version.full | version_compare('2.5', '<')"
+- name: "lookup peer requests for vpc {{ item_peer.requester_vpc_id }}"
+  block:
+    - name: AWS | Peering | Gather current peerings
+      community.aws.ec2_vpc_peering_info:
+        region: "{{ item_peer.region |d(item_vpc.region) }}"
+      register: all_vpc_peers
 
-- name: AWS | PEER create
-  ec2_vpc_peer:
-    region: "{{ item_peer.region |d(item_vpc.region) }}"
-    state: present
-    vpc_id: "{{ vpc_id }}"
-    peer_owner_id: "{{ item_peer.peer_owner_id |d(omit) }}"
-    peer_vpc_id: "{{ item_peer.peer_vpc_id }}"
-    peer_region: "{{ item_peer.peer_region |d(omit) }}"
-    tags: "{{ item_peer.tags }}"
-  register: ret_vpc_peer
-  when: "ansible_version.full | version_compare('2.5', '>=')"
+    - debug: var=all_vpc_peers
 
-- block:
-    - name: AWS | PEER retrieve peerings
-      local_ec2_vpc_peering_facts:
-        region: "{{ item_vpc.region }}"
-        filters:
-          "tag:Name": "{{ item_peer.tags.Name }}"
+    - name: AWS | Peering | Discovery peering_id
+      set_fact:
+        peering_id: "{{ item | json_query(peer_query) }}"
+        peering_info: "{{ item }}"
+      vars:
+        peer_query: "[?requester_vpc_info.vpc_id=='{{ item_peer.requester_vpc_id }}'].vpc_peering_connection_id"
+      with_items: "{{ all_vpc_peers.vpc_peering_connections }}"
+      when:
+        - (item_peer.peering_id is not defined)
+        - (item.status.code is defined) and item.status.code != 'failed'
+
+    - name: AWS | Peering | Set peering ID
+      set_fact:
+        peering_id: item_peer.peering_id
+      when: item_peer.peering_id is defined
+
+    - name: AWS | Peering | Accept
+      ec2_vpc_peer:
+        region: "{{ item_peer.region |d(item_vpc.region) }}"
+        state: "{{ item_peer.state |d(present) }}"
+        peering_id: "{{ peering_info.vpc_peering_connection_id }}"
+        tags: "{{ item_peer.tags }}"
+      register: ret_vpc_peer
+      when: peering_id is defined
+
+    - name: AWS | Peering | Set Peering ID
+      set_fact:
+        peering_id: "{{ peering_info.vpc_peering_connection_id }}"
+      when: item_peer.peering_id is not defined
+
+  when: item_peer.state|d('present') == 'accept'
+
+- name: "creating peers peer requests for vpc {{ item_peer.peer_vpc_id }}"
+  block:
+    - name: AWS | Peering | create
+      ec2_vpc_peer:
+        region: "{{ item_peer.region |d(item_vpc.region) }}"
+        state: "{{ item_peer.state |d('present') }}"
+        vpc_id: "{{ vpc_id }}"
+        peer_owner_id: "{{ item_peer.peer_owner_id |d(omit) }}"
+        peer_vpc_id: "{{ item_peer.peer_vpc_id | d(omit) }}"
+        peer_region: "{{ item_peer.peer_region |d(omit) }}"
+        peering_id: "{{ peering_id |d(omit) }}"
+        tags: "{{ item_peer.tags }}"
       register: ret_vpc_peer
 
-    - name: AWS | PEER filter by non deleted peers
+    - name: AWS | Peering | Set Peering ID
       set_fact:
-        ret_vpc_peer: "{{ item }}"
-      when: (ret_vpc_peer.result is defined) and item.status.code != "deleted"
-      with_items: "{{ ret_vpc_peer.result }}"
-  when: "ansible_version.full | version_compare('2.4', '<')"
+        peering_id: "{{ ret_vpc_peer.vpc_peering_connection.vpc_peering_connection_id }}"
+      when: ret_vpc_peer.vpc_peering_connection.vpc_peering_connection_id is defined
 
-- name: AWS | PEER show
-  debug: var=ret_vpc_peer
+  when: item_peer.state|d('present') == 'present'
 
-- name: AWS | PEER save facts
+- name: AWS | Peering | Saving facts
   set_fact:
     vpc_peers: "{{ vpc_peers + [
         {
           'name': item_peer.tags.Name,
-          'id': ret_vpc_peer.vpc_peering_connection_id
+          'id': peering_id
         }
       ] }}"
+  when: peering_id is defined
