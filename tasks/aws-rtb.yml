@@ -46,9 +46,9 @@
         }
       ] }}"
   vars:
-    rt_query: "[?name=='{{ item.peering }}'].id"
-  when: item.peering is defined
-  with_items: "{{ item_rtb.table }}"
+    rt_query: "[?name=='{{ item.target }}'].id"
+  when: item.gw_type is defined and item.gw_type == 'peering'
+  with_items: "{{ item_rtb.routes | d([]) }}"
 
 - name: AWS | RT Set route table's subnets
   set_fact:

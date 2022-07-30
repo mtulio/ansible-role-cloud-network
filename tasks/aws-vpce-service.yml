@@ -71,6 +71,10 @@
       with_items: "{{ nets.results }}"
   when: item_vpces.subnet_names | d([]) | length > 0
 
+- name: AWS | VPCe Services | dump
+  debug:
+    var: vpce_resources
+
 - name: AWS | VPCe Services | Create
   ec2_vpc_endpoint:
     state: present
