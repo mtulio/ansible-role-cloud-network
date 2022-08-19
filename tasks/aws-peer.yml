@@ -14,7 +14,9 @@
         peering_id: "{{ item | json_query(peer_query) }}"
         peering_info: "{{ item }}"
       vars:
-        peer_query: "[?requester_vpc_info.vpc_id=='{{ item_peer.requester_vpc_id }}'].vpc_peering_connection_id"
+        peer_query: \
+          "[?requester_vpc_info.vpc_id=='{{ item_peer.requester_vpc_id }}']\
+          .vpc_peering_connection_id"
       with_items: "{{ all_vpc_peers.vpc_peering_connections }}"
       when:
         - (item_peer.peering_id is not defined)
@@ -31,7 +33,7 @@
         state: "{{ item_peer.state |d(present) }}"
         peering_id: "{{ peering_info.vpc_peering_connection_id }}"
         tags: "{{ item_peer.tags }}"
-      register: ret_vpc_peer
+      register: o_peer
       when: peering_id is defined
 
     - name: AWS | Peering | Set Peering ID
@@ -53,12 +55,13 @@
         peer_region: "{{ item_peer.peer_region |d(omit) }}"
         peering_id: "{{ peering_id |d(omit) }}"
         tags: "{{ item_peer.tags }}"
-      register: ret_vpc_peer
+      register: o_peer
 
     - name: AWS | Peering | Set Peering ID
       set_fact:
-        peering_id: "{{ ret_vpc_peer.vpc_peering_connection.vpc_peering_connection_id }}"
-      when: ret_vpc_peer.vpc_peering_connection.vpc_peering_connection_id is defined
+        peering_id: \
+          "{{ o_peer.vpc_peering_connection.vpc_peering_connection_id }}"
+      when: o_peer.vpc_peering_connection.vpc_peering_connection_id is defined
 
   when: item_peer.state|d('present') == 'present'
 
