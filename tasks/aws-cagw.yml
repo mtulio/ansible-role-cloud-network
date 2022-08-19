@@ -3,18 +3,18 @@
 # Using cloud_network standalone, you should include the module in the local
 # modules path:
 # ansible-config dump |grep DEFAULT_MODULE_PATH
-- name: AWS | CAGW create
-  local_ec2_carrier_gateway:
-    state: present
-    vpc_id: "{{ vpc_id }}"
-    region: "{{ item_vpc.region }}"
-    tags:
-      Name: "{{ item_vpc.name }}-cagw"
-  register: ret_cagw
+# - name: AWS | CAGW create
+#   local_ec2_carrier_gateway:
+#     state: present
+#     vpc_id: "{{ vpc_id }}"
+#     region: "{{ item_vpc.region }}"
+#     tags:
+#       Name: "{{ item_vpc.name }}-cagw"
+#   register: ret_cagw
 
-- name: AWS | CAGW fact
-  set_fact:
-    cloud_network_state: "{{ cloud_network_state
-        | combine({'cagw':ret_cagw.carrier_gateway_id})
-      }}"
-    gateways: "{{ gateways | combine({'cagw':ret_cagw.carrier_gateway_id}) }}"
+# - name: AWS | CAGW fact
+#   set_fact:
+#     cloud_network_state: "{{ cloud_network_state
+#         | combine({'cagw':ret_cagw.carrier_gateway_id})
+#       }}"
+#     gateways: "{{ gateways | combine({'cagw':ret_cagw.carrier_gateway_id}) }}"
