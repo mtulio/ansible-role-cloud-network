@@ -26,6 +26,10 @@ jobs:
         with:
           path: 'mtulio.cloud_network'
 
+      - name: Get version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF##*/}
+
       - name: Set up Python 3.
         uses: actions/setup-python@v2
         with:
@@ -35,8 +39,11 @@ jobs:
         run: pip3 install ansible-core
 
       - name: Trigger a new import on Galaxy.
+        env:
+          RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
         run: >-
           ansible-galaxy role import \
             --role-name cloud_network \
             --api-key ${{ secrets.ANSIBLE_GALAXY_TOKEN }} \
+            --branch $RELEASE_VERSION \
             mtulio ansible-role-cloud-network
