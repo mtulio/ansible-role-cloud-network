@@ -1,0 +1,64 @@
+---
+
+- debug:
+    var: cloud_networks
+
+- name: Create datacenter
+  ionoscloudsdk.ionoscloud.datacenter:
+    name: "{{ item_vpc.datacenter }}"
+    description: "{{ item_vpc.datacenter_desc |d(omit) }}"
+    location: "{{ item_vpc.region }}"
+  register: dc
+
+- name: IONOS | Datacenter show
+  debug:
+    var: dc
+
+- name: Create LANs
+  ionoscloudsdk.ionoscloud.lan:
+    state: present
+    datacenter: "{{ dc.datacenter.id }}"
+    name: "{{ item_lan.name }}"
+    public: "{{ item_lan.map_public | d(false) }}"
+    pcc_id: "{{ item_lan.name }}"
+  with_items: "{{ item_vpc.subnets }}"
+  loop_control:
+    loop_var: item_lan
+  register: lans
+
+- name: IONOS | Lans show
+  debug:
+    var: lans
+
+- name: IONOS | Create Public IP Blocks
+  ionoscloudsdk.ionoscloud.ipblock:
+    state: present
+    name: "{{ ipb.name }}"
+    location: "{{ item_vpc.region }}"
+    size: "{{ ipb.size }}"
+  register: ip_blocks
+  with_items: "{{ item_vpc.ip_blocks }}"
+  loop_control:
+    loop_var: ipb
+
+- name: IONOS | ip_blocks show
+  debug:
+    var: ip_blocks
+
+# - name: IONOS | Create Public IP Blocks
+#   ionoscloudsdk.ionoscloud.ipblock:
+#     state: present
+#     name: "{{ item_vpc.ip_block.name }}"
+#     location: "{{ item_vpc.region }}"
+#     size: "{{ item_vpc.ip_block.size }}"
+#   register: ips
+
+# - name: IONOS | IP Block show
+#   debug:
+#     var: ips
+
+- name: Create Nat Gateways
+  include_tasks: ionos-natgw.yml
+  with_items: "{{ item_vpc.nat_gateways | d([]) }}"
+  loop_control:
+    loop_var: natgw

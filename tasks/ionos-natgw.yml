@@ -1,0 +1,52 @@
+---
+
+- ansible.builtin.set_fact:
+    natgw_lans: []
+
+- include_tasks: ionos-natgw-lan.yml
+  with_items: "{{ natgw.lans }}"
+  loop_control:
+    loop_var: natgw_lan
+
+- name: IONOS | natgw show
+  debug:
+    var: natgw_lans
+
+- name: IONOS | Create Public IP Blocks
+  ionoscloudsdk.ionoscloud.ipblock:
+    state: present
+    name: "{{ natgw.ip_block_name }}"
+    location: "{{ item_vpc.region }}"
+  register: natgw_ip_block
+
+- name: IONOS | Create NatGW
+  ionoscloudsdk.ionoscloud.nat_gateway:
+    state: present
+    datacenter_id: "{{ dc.datacenter.id }}"
+    name: "{{ natgw.name }}"
+    public_ips: "{{ natgw_ip_block.ipblock.properties.ips[0] }}"
+    lans: "{{ natgw_lans }}"
+    wait: true
+  register: natgw_res
+
+- name: IONOS | natgw show
+  debug:
+    var: natgw_res
+
+- name: Create NAT Gateway Rule
+  ionoscloudsdk.ionoscloud.nat_gateway_rule:
+    datacenter_id: "{{ dc.datacenter.id }}"
+    nat_gateway_id: "{{ natgw_res.nat_gateway.id }}"
+    name: "{{ natgw.name }}"
+    type: "{{ natgw.rules[0].type }}"
+    protocol: "{{ natgw.rules[0].protocol }}"
+    source_subnet: "{{ natgw.rules[0].source_subnet }}"
+    target_subnet: "{{ natgw.rules[0].target_subnet | d(omit) }}"
+    target_port_range: "{{ natgw.rules[0].target_port_range | d(omit) }}"
+    public_ip: "{{ natgw_ip_block.ipblock.properties.ips[0] }}"
+    wait: true
+  register: natgw_rule_res
+
+- name: IONOS | natgw show
+  debug:
+    var: natgw_rule_res

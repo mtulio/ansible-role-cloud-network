@@ -1,0 +1,13 @@
+---
+- name: Get LANs natgw
+  ionoscloudsdk.ionoscloud.lan:
+    state: present
+    datacenter: "{{ dc.datacenter.id }}"
+    name: "{{ natgw_lan.name }}"
+  register: natgw_lan_res
+
+- ansible.builtin.set_fact:
+    natgw_lans: "{{ natgw_lans + [{
+        'id': natgw_lan_res.lan.id,
+        'gateway_ips': natgw_lan.gateway_ips
+      }] }}"
