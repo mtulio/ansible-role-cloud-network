@@ -7,11 +7,12 @@
   register: ret_natgw_net
 
 - name: AWS | NAT show
-  debug:
+  ansible.builtin.debug:
     var: ret_natgw_net
+  when: debug|d(false)
 
 - name: "AWS | NAT GW check subnets"
-  fail:
+  ansible.builtin.fail:
     msg: "AWS | NAT GW failed: no subnets named {{ natgw.subnet }}"
   when: ret_natgw_net.subnets | length < 1
 
@@ -26,7 +27,7 @@
   register: ret_natgw
 
 - name: AWS | IGW fact
-  set_fact:
+  ansible.builtin.set_fact:
     vpc_natgw: "{{ ret_natgw.nat_gateway_id }}"
     gateways: "{{ gateways | combine({
         'natgw': gateways.natgw | combine({

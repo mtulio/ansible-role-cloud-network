@@ -1,15 +1,19 @@
 ---
+- name: AWS | IGW create Tag Name
+  ansible.builtin.set_fact:
+    igw_tag_name: {'Name': item_vpc.name+'-igw'}
+
 - name: AWS | IGW create
-  ec2_vpc_igw:
+  amazon.aws.ec2_vpc_igw:
     state: present
     region: "{{ item_vpc.region }}"
     vpc_id: "{{ vpc_id }}"
-    tags:
-      Name: "{{ item_vpc.name }}-igw"
+    tags: "{{ item_vpc.igw.tags|d({}) | combine(igw_tag_name) }}"
+    purge_tags: "{{ item_vpc.igw.purge_tags|d('no') }}"
   register: ret_igw
 
 - name: AWS | IGW fact
-  set_fact:
+  ansible.builtin.set_fact:
     vpc_igw: "{{ ret_igw.gateway_id }}"
     gateways: "{{ gateways | combine({'igw':ret_igw.gateway_id}) }}"
     cloud_network_state: "{{ cloud_network_state

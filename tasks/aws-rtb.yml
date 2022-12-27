@@ -1,11 +1,11 @@
 ---
 - name: AWS | RT init lists
-  set_fact:
+  ansible.builtin.set_fact:
     rtb_routes: []
     rtb_subnets: []
 
 - name: AWS | RT map NATGW to it's ID
-  set_fact:
+  ansible.builtin.set_fact:
     rtb_routes: "{{ rtb_routes + [
         {
           'dest': item.dest,
@@ -16,7 +16,7 @@
   with_items: "{{ item_rtb.routes | d([]) }}"
 
 - name: AWS | RT map IGW to it's ID
-  set_fact:
+  ansible.builtin.set_fact:
     rtb_routes: "{{ rtb_routes + [
         {
           'dest': item.dest,
@@ -27,7 +27,7 @@
   with_items: "{{ item_rtb.routes | d([]) }}"
 
 - name: AWS | RT map CAGW to it's ID
-  set_fact:
+  ansible.builtin.set_fact:
     rtb_routes: "{{ rtb_routes + [
         {
           'dest': item.dest,
@@ -38,7 +38,7 @@
   with_items: "{{ item_rtb.routes | d([]) }}"
 
 - name: "AWS | RT map Peerings to it's ID"
-  set_fact:
+  ansible.builtin.set_fact:
     rtb_routes: "{{ rtb_routes + [
         {
           'dest': item.dest,
@@ -51,7 +51,7 @@
   with_items: "{{ item_rtb.routes | d([]) }}"
 
 - name: AWS | RT Set route table's subnets
-  set_fact:
+  ansible.builtin.set_fact:
     rtb_subnets: "{{ rtbs | json_query(rt_query) }}"
   vars:
     rt_query: "[?name=='{{ item.name }}'].subnets"
@@ -59,7 +59,7 @@
   with_items: "{{ rtbs }}"
 
 - name: AWS | RT Set route table's subnets
-  set_fact:
+  ansible.builtin.set_fact:
     rtb_subnets: "{{ rtb_subnets[0] }}"
 
 # https://github.com/ansible-collections/amazon.aws/pull/926
@@ -74,4 +74,5 @@
     routes: "{{ rtb_routes |d([]) }}"
     purge_routes: false
     purge_subnets: false
+    purge_tags: false
   register: ret_rtb_subnets
