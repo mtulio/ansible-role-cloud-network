@@ -1,10 +1,10 @@
 ---
 - name: AWS | SG | Show  security_groups
-  set_fact:
+  ansible.builtin.set_fact:
     security_groups: "{{ item_vpc.security_groups }}"
 
 - name: AWS | SG | Expand Global vars in security group values
-  set_fact:
+  ansible.builtin.set_fact:
     security_groups: "{{ \
       security_groups \
       | to_json \
@@ -14,20 +14,22 @@
   with_dict: "{{ security_groups_globals |d({}) }}"
 
 - name: AWS | SG | Log all security groups rules
-  debug:
+  ansible.builtin.debug:
     var: security_groups
+  when: debug|d(false)
 
 - name: AWS | SG | Ensure all Security Groups exists and correctly
-  ec2_group:
+  amazon.aws.ec2_group:
     region: "{{ item_vpc.region }}"
     state: present
     vpc_id: "{{ vpc_id }}"
     name: "{{ item.name }}"
     description: "{{ item.description }}"
     rules: "{{ item.rules }}"
-    rules_egress: "{{ item.rules_egress }}"
     purge_rules: "{{ item.purge_rules |d(false) }}"
+    rules_egress: "{{ item.rules_egress }}"
     purge_rules_egress: "{{ item.purge_rules_egress |d(false) }}"
     tags: "{{ item.tags |d({}) }}"
+    purge_tags: "{{ item.purge_tags |d(false) }}"
   with_items: "{{ security_groups }}"
   register: returned_sgs
