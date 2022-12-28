@@ -46,9 +46,8 @@
   ansible.builtin.set_fact:
     rtb_subnets: "{{ rtb_subnets[0] }}"
 
-# https://github.com/ansible-collections/amazon.aws/pull/926
 - name: AWS | RTb associate subnets {{ item_rtb.name }}
-  local_ec2_vpc_route_table:
+  amazon.aws.ec2_vpc_route_table:
     region: "{{ item_vpc.region }}"
     vpc_id: "{{ vpc_id }}"
     lookup: tag
