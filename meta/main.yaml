@@ -1,5 +1,5 @@
 ---
-galaxy_info:
+galaxy_info: # noqa: schema[meta]
   role_name: cloud_network
   author: mtulio
   description: Ansible tole to manage Cloud Networks
