@@ -7,20 +7,17 @@
     cidr: "{{ item_subnet.cidr }}"
     az: "{{ item_subnet.az }}"
     map_public: "{{ item_subnet.map_public | d(false) }}"
-    resource_tags: "{{ item_subnet.tags|d({})
-        |combine({'Name':item_subnet.name})
+    resource_tags: "{{ item_subnet.tags | d({})
+        | combine({'Name': item_subnet.name})
       }}"
   register: ret_subnet
 
 - name: AWS | SUBNET save to state vars
   ansible.builtin.set_fact:
-    vpc_subnets: "{{ vpc_subnets + [
-      item_subnet | combine(
-        {
-          'subnet_id': ret_subnet.subnet.id
-        })] }}"
+    vpc_subnets: "{{ vpc_subnets + [item_subnet \
+        | combine({'subnet_id': ret_subnet.subnet.id})]
+      }}"
     cloud_network_state: "{{ cloud_network_state
-        | combine({'subnets': cloud_network_state.subnets|d([]) + [
-          item_subnet | combine({ 'subnet_id':ret_subnet.subnet.id })
-          ]})
-        }}"
+        | combine({'subnets': cloud_network_state.subnets | d([]) \
+        + [item_subnet | combine({'subnet_id': ret_subnet.subnet.id})]})
+      }}"

@@ -1,16 +1,17 @@
 ---
 - name: AWS | VPCe Services | Debug VPCe
-  debug:
+  ansible.builtin.debug:
     var: item_vpces
 
 - name: AWS | VPCe Services | Init Locla Vars
-  set_fact:
+  ansible.builtin.set_fact:
     vpce_resources: {}
 
 - name: AWS | VPCe Services | Discovery Route tables IDs
+  when: item_vpces.route_tables | d([]) | length > 0
   block:
     - name: AWS | VPCe Services | Filter Route Tables
-      ec2_vpc_route_table_info:
+      amazon.aws.ec2_vpc_route_table_info:
         region: "{{ item_vpc.region }}"
         filters:
           "tag:Name": "{{ item_rtb }}"
@@ -20,16 +21,14 @@
         loop_var: item_rtb
 
     - name: AWS | VPCe Services | Mount Rtb IDs
-      set_fact:
-        vpce_resources: "{{ vpce_resources |combine({
-            'rtb_ids': vpce_resources['rtb_ids']|d([]) +
-                       [item.route_tables[0].id]
-          }) }}"
+      ansible.builtin.set_fact:
+        vpce_resources: "{{ vpce_resources \
+          | combine({'rtb_ids': vpce_resources['rtb_ids'] | d([]) \
+          + [item.route_tables[0].id]}) }}"
       with_items: "{{ rtbs.results }}"
-  when: item_vpces.route_tables | d([]) | length > 0
-
 
 - name: AWS | VPCe Services | Discovery Security Groups IDs
+  when: item_vpces.security_group_names | d([]) | length > 0
   block:
     - name: AWS | VPCe Services | Filter Security Groups
       amazon.aws.ec2_group_info:
@@ -42,15 +41,14 @@
         loop_var: item_sg
 
     - name: AWS | VPCe Services | Mount SG IDs
-      set_fact:
-        vpce_resources: "{{ vpce_resources |combine({
-            'sg_ids': vpce_resources['sg_ids']|d([]) +
-                      [item.security_groups[0].group_id]
-          }) }}"
+      ansible.builtin.set_fact:
+        vpce_resources: "{{ vpce_resources \
+          | combine({'sg_ids': vpce_resources['sg_ids'] | d([]) \
+          + [item.security_groups[0].group_id]}) }}"
       with_items: "{{ sgs.results }}"
-  when: item_vpces.security_group_names | d([]) | length > 0
 
 - name: AWS | VPCe Services | Discovery Subnet IDs
+  when: item_vpces.subnet_names | d([]) | length > 0
   block:
     - name: AWS | VPCe Services | Filter Subnets by Name
       amazon.aws.ec2_vpc_subnet_info:
@@ -63,20 +61,18 @@
         loop_var: item_net
 
     - name: AWS | VPCe Services | Mount Subnet IDs
-      set_fact:
-        vpce_resources: "{{ vpce_resources |combine({
-            'net_ids': vpce_resources['net_ids']|d([]) +
-                       [item.subnets[0].id]
-          }) }}"
+      ansible.builtin.set_fact:
+        vpce_resources: "{{ vpce_resources \
+          | combine({'net_ids': vpce_resources['net_ids'] | d([]) \
+          + [item.subnets[0].id]}) }}"
       with_items: "{{ nets.results }}"
-  when: item_vpces.subnet_names | d([]) | length > 0
 
 - name: AWS | VPCe Services | dump
-  debug:
+  ansible.builtin.debug:
     var: vpce_resources
 
 - name: AWS | VPCe Services | Create
-  ec2_vpc_endpoint:
+  amazon.aws.ec2_vpc_endpoint:
     state: present
     region: "{{ item_vpc.region }}"
     vpc_id: "{{ vpc_id }}"

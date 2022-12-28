@@ -11,12 +11,12 @@
       | replace(item.key, item.value) \
       | from_json \
       }}"
-  with_dict: "{{ security_groups_globals |d({}) }}"
+  with_dict: "{{ security_groups_globals | d({}) }}"
 
 - name: AWS | SG | Log all security groups rules
   ansible.builtin.debug:
     var: security_groups
-  when: debug|d(false)
+  when: debug | d(false)
 
 - name: AWS | SG | Ensure all Security Groups exists and correctly
   amazon.aws.ec2_group:
@@ -26,10 +26,10 @@
     name: "{{ item.name }}"
     description: "{{ item.description }}"
     rules: "{{ item.rules }}"
-    purge_rules: "{{ item.purge_rules |d(false) }}"
+    purge_rules: "{{ item.purge_rules | d(false) }}"
     rules_egress: "{{ item.rules_egress }}"
-    purge_rules_egress: "{{ item.purge_rules_egress |d(false) }}"
-    tags: "{{ item.tags |d({}) }}"
-    purge_tags: "{{ item.purge_tags |d(false) }}"
+    purge_rules_egress: "{{ item.purge_rules_egress | d(false) }}"
+    tags: "{{ item.tags | d({}) }}"
+    purge_tags: "{{ item.purge_tags | d(false) }}"
   with_items: "{{ security_groups }}"
   register: returned_sgs

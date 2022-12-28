@@ -1,6 +1,6 @@
 ---
 - name: AWS | NAT GW | discovery subnet
-  ec2_vpc_subnet_info:
+  amazon.aws.ec2_vpc_subnet_info:
     region: "{{ item_vpc.region }}"
     filters:
       "tag:Name": "{{ natgw.subnet }}"
@@ -17,24 +17,21 @@
   when: ret_natgw_net.subnets | length < 1
 
 - name: AWS | NAT GW Create
-  ec2_vpc_nat_gateway:
+  amazon.aws.ec2_vpc_nat_gateway:
     state: present
     region: "{{ item_vpc.region }}"
     subnet_id: "{{ ret_natgw_net.subnets[0].id }}"
     if_exist_do_not_create: "{{ natgw.ignore_exists | d(true) }}"
     wait: "{{ natgw.wait | d(true) }}"
-    tags: "{{ natgw.tags|d({}) | combine({'Name':natgw.name}) }}"
+    tags: "{{ natgw.tags | d({}) | combine({'Name': natgw.name}) }}"
   register: ret_natgw
 
 - name: AWS | IGW fact
   ansible.builtin.set_fact:
     vpc_natgw: "{{ ret_natgw.nat_gateway_id }}"
-    gateways: "{{ gateways | combine({
-        'natgw': gateways.natgw | combine({
-            natgw.name:ret_natgw.nat_gateway_id
-          })
-        })
+    gateways: "{{ gateways | combine({'natgw': gateways.natgw \
+          | combine({natgw.name: ret_natgw.nat_gateway_id})})
       }}"
     cloud_network_state: "{{ cloud_network_state
-        | combine({'natgw':ret_natgw.nat_gateway_id})
+        | combine({'natgw': ret_natgw.nat_gateway_id})
       }}"

@@ -6,45 +6,29 @@
 
 - name: AWS | RT map NATGW to it's ID
   ansible.builtin.set_fact:
-    rtb_routes: "{{ rtb_routes + [
-        {
-          'dest': item.dest,
-          'gateway_id': gateways.natgw[item.target]
-        }
-      ] }}"
+    rtb_routes: "{{ rtb_routes + [{'dest': item.dest,
+          'gateway_id': gateways.natgw[item.target]}] }}"
   when: item.gw_type is defined and item.gw_type == 'natgw'
   with_items: "{{ item_rtb.routes | d([]) }}"
 
 - name: AWS | RT map IGW to it's ID
   ansible.builtin.set_fact:
-    rtb_routes: "{{ rtb_routes + [
-        {
-          'dest': item.dest,
-          'gateway_id': gateways.igw
-        }
-      ] }}"
+    rtb_routes: "{{ rtb_routes + [{'dest': item.dest,
+          'gateway_id': gateways.igw}] }}"
   when: item.gw_type is defined and item.gw_type == 'igw'
   with_items: "{{ item_rtb.routes | d([]) }}"
 
 - name: AWS | RT map CAGW to it's ID
   ansible.builtin.set_fact:
-    rtb_routes: "{{ rtb_routes + [
-        {
-          'dest': item.dest,
-          'gateway_id': gateways.cagw
-        }
-      ] }}"
+    rtb_routes: "{{ rtb_routes + [{'dest': item.dest,
+          'gateway_id': gateways.cagw}] }}"
   when: item.gw_type is defined and item.gw_type == 'cagw'
   with_items: "{{ item_rtb.routes | d([]) }}"
 
 - name: "AWS | RT map Peerings to it's ID"
   ansible.builtin.set_fact:
-    rtb_routes: "{{ rtb_routes + [
-        {
-          'dest': item.dest,
-          'gateway_id': vpc_peers | json_query(rt_query) | join(' ')
-        }
-      ] }}"
+    rtb_routes: "{{ rtb_routes + [{'dest': item.dest,
+          'gateway_id': vpc_peers | json_query(rt_query) | join(' ')}] }}"
   vars:
     rt_query: "[?name=='{{ item.target }}'].id"
   when: item.gw_type is defined and item.gw_type == 'peering'
@@ -63,7 +47,7 @@
     rtb_subnets: "{{ rtb_subnets[0] }}"
 
 # https://github.com/ansible-collections/amazon.aws/pull/926
-- name: "AWS | RTb associate subnets {{ item_rtb.name }}"
+- name: AWS | RTb associate subnets {{ item_rtb.name }}
   local_ec2_vpc_route_table:
     region: "{{ item_vpc.region }}"
     vpc_id: "{{ vpc_id }}"
@@ -71,7 +55,7 @@
     tags:
       Name: "{{ item_rtb.name }}"
     subnets: "{{ rtb_subnets }}"
-    routes: "{{ rtb_routes |d([]) }}"
+    routes: "{{ rtb_routes | d([]) }}"
     purge_routes: false
     purge_subnets: false
     purge_tags: false

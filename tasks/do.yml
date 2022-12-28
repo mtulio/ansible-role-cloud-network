@@ -1,7 +1,7 @@
 ---
 
-- name: debug
-  debug:
+- name: VPC | DO | Show init message
+  ansible.builtin.debug:
     msg: "DO VPC triggered"
 
 - name: VPC | DO | Project | Check

@@ -1,15 +1,15 @@
 ---
 - name: AWS | VPC init vars
-  set_fact:
+  ansible.builtin.set_fact:
     vpc_id: {}
     vpc_igw: {}
     ret_vpc: {}
     vpc_subnets: []
     subnets_rtbs: "{{ item_vpc
         | json_query('subnets[*].route_table')
-        | unique |list
+        | unique | list
       }}"
-    rtbs_vpc: "{{ item_vpc |json_query('route_tables[*].name') |list }}"
+    rtbs_vpc: "{{ item_vpc | json_query('route_tables[*].name') | list }}"
     rtbs: []
     vpc_peers: []
     cloud_network_state: {}
@@ -18,7 +18,7 @@
   tags: always
 
 - name: AWS | VPC create
-  ec2_vpc_net:
+  amazon.aws.ec2_vpc_net:
     state: present
     region: "{{ item_vpc.region }}"
     name: "{{ item_vpc.name }}"
@@ -30,23 +30,23 @@
   tags: sg, always
 
 - name: AWS | VPC get ID
-  set_fact:
+  ansible.builtin.set_fact:
     vpc_id: "{{ ret_vpc.vpc.id }}"
     cloud_network_state: "{{ cloud_network_state
-        | combine({'id':ret_vpc.vpc.id})
+        | combine({'id': ret_vpc.vpc.id})
       }}"
   check_mode: false
   tags: sg, always
 
 - name: AWS | VPC Peering
-  include_tasks: aws-peer.yml
+  ansible.builtin.include_tasks: aws-peer.yml
   with_items: "{{ item_vpc.peers | d([]) }}"
   loop_control:
     loop_var: item_peer
   tags: peering
 
 - name: AWS | VPC Subnet
-  include_tasks: aws-subnet.yml
+  ansible.builtin.include_tasks: aws-subnet.yml
   register: ret_subnet
   with_items: "{{ item_vpc.subnets }}"
   loop_control:
@@ -54,33 +54,33 @@
   tags: subnets
 
 - name: AWS | VPC Internet Gateway
-  include_tasks: aws-igw.yml
+  ansible.builtin.include_tasks: aws-igw.yml
   when: item_vpc.internet_gateway | d(false)
 
 - name: AWS | VPC Carrier Gateway
-  include_tasks: aws-cagw.yml
+  ansible.builtin.include_tasks: aws-cagw.yml
   when: item_vpc.carrier_gateway | d(false)
 
 - name: AWS | VPC NAT Gateway
-  include_tasks: aws-natgw.yml
+  ansible.builtin.include_tasks: aws-natgw.yml
   with_items: "{{ item_vpc.nat_gateways | d([]) }}"
   loop_control:
     loop_var: natgw
 
 - name: AWS | VPN
-  include_tasks: aws-vpn.yml
+  ansible.builtin.include_tasks: aws-vpn.yml
   when: item_vpc.vpn_connections is defined
 
 - name: AWS | VPC Routing
-  include_tasks: aws-routing.yml
+  ansible.builtin.include_tasks: aws-routing.yml
 
 - name: AWS | VPC Security Groups
-  include_tasks: aws-sg.yml
+  ansible.builtin.include_tasks: aws-sg.yml
   when: item_vpc.security_groups is defined
   tags: sg
 
 - name: AWS | VPC endpoint services
-  include_tasks: aws-vpce-service.yml
+  ansible.builtin.include_tasks: aws-vpce-service.yml
   when: item_vpc.endpoint_services is defined
   with_items: "{{ item_vpc.endpoint_services }}"
   loop_control:
@@ -88,9 +88,9 @@
   tags: vpce
 
 - name: VPC | Update Global states
-  set_fact:
+  ansible.builtin.set_fact:
     cloud_networks_state: "{{ cloud_networks_state + [cloud_network_state] }}"
 
 - name: VPC | Show Global State
-  debug:
+  ansible.builtin.debug:
     var: cloud_networks_state
