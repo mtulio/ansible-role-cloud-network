@@ -1,10 +1,10 @@
 cloud-network
 =============
 
-[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
-![](https://github.com/mtulio/ansible-role-cloud-network/actions/workflows/release.yml/badge.svg)
-![](https://github.com/mtulio/ansible-role-cloud-network/actions/workflows/ci.yml/badge.svg?branch=main)
-![](https://img.shields.io/ansible/role/59532)
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![](https://github.com/mtulio/ansible-role-cloud-network/actions/workflows/release.yml/badge.svg)](https://github.com/mtulio/ansible-role-cloud-network/actions/workflows/release.yml)
+[![](https://github.com/mtulio/ansible-role-cloud-network/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/mtulio/ansible-role-cloud-network/actions/workflows/ci.yml)
+[![](https://img.shields.io/ansible/role/59532)](https://galaxy.ansible.com/mtulio/cloud_network)
 
 
 Ansible role to manage all resources in Cloud Network Infrastructure.
