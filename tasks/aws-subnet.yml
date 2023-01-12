@@ -1,5 +1,5 @@
 ---
-- name: " AWS | SUBNET Create {{ item_subnet.name }}"
+- name: AWS | Subnet | Create {{ item_subnet.name }}
   amazon.aws.ec2_vpc_subnet:
     state: present
     region: "{{ item_vpc.region }}"
@@ -12,7 +12,7 @@
       }}"
   register: ret_subnet
 
-- name: AWS | SUBNET save to state vars
+- name: AWS | Subnet | Save to state vars
   ansible.builtin.set_fact:
     vpc_subnets: "{{ vpc_subnets + [item_subnet \
         | combine({'subnet_id': ret_subnet.subnet.id})]

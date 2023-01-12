@@ -61,7 +61,7 @@
           "{{ o_peer.vpc_peering_connection.vpc_peering_connection_id }}"
       when: o_peer.vpc_peering_connection.vpc_peering_connection_id is defined
 
-- name: AWS | Peering | Saving facts
+- name: AWS | Peering | Save state
   ansible.builtin.set_fact:
     vpc_peers: "{{ vpc_peers + [{'name': item_peer.tags.Name,
       'id': peering_id}] }}"
