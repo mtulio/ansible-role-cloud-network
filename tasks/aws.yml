@@ -87,10 +87,10 @@
     loop_var: item_vpces
   tags: vpce
 
-- name: VPC | Update Global states
+- name: AWS | VPC | Update Global states
   ansible.builtin.set_fact:
     cloud_networks_state: "{{ cloud_networks_state + [cloud_network_state] }}"
 
-- name: VPC | Show Global State
+- name: AWS | VPC | Show Global State
   ansible.builtin.debug:
     var: cloud_networks_state
