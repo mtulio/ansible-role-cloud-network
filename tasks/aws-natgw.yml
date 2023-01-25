@@ -6,17 +6,17 @@
       "tag:Name": "{{ natgw.subnet }}"
   register: ret_natgw_net
 
-- name: AWS | NAT show
+- name: AWS | NAT | Show
   ansible.builtin.debug:
     var: ret_natgw_net
   when: debug|d(false)
 
-- name: "AWS | NAT GW check subnets"
+- name: AWS | NAT GW | Check subnets
   ansible.builtin.fail:
     msg: "AWS | NAT GW failed: no subnets named {{ natgw.subnet }}"
   when: ret_natgw_net.subnets | length < 1
 
-- name: AWS | NAT GW Create
+- name: AWS | NAT GW | Create
   amazon.aws.ec2_vpc_nat_gateway:
     state: present
     region: "{{ item_vpc.region }}"
@@ -26,7 +26,7 @@
     tags: "{{ natgw.tags | d({}) | combine({'Name': natgw.name}) }}"
   register: ret_natgw
 
-- name: AWS | IGW fact
+- name: AWS | NAT GW | Save state
   ansible.builtin.set_fact:
     vpc_natgw: "{{ ret_natgw.nat_gateway_id }}"
     gateways: "{{ gateways | combine({'natgw': gateways.natgw \

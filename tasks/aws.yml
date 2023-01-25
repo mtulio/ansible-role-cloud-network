@@ -1,5 +1,5 @@
 ---
-- name: AWS | VPC init vars
+- name: AWS | VPC | Init
   ansible.builtin.set_fact:
     vpc_id: {}
     vpc_igw: {}
@@ -17,7 +17,7 @@
       natgw: {}
   tags: always
 
-- name: AWS | VPC create
+- name: AWS | VPC | Create
   amazon.aws.ec2_vpc_net:
     state: present
     region: "{{ item_vpc.region }}"
@@ -29,7 +29,7 @@
   register: ret_vpc
   tags: sg, always
 
-- name: AWS | VPC get ID
+- name: AWS | VPC | Get ID
   ansible.builtin.set_fact:
     vpc_id: "{{ ret_vpc.vpc.id }}"
     cloud_network_state: "{{ cloud_network_state
@@ -38,14 +38,14 @@
   check_mode: false
   tags: sg, always
 
-- name: AWS | VPC Peering
+- name: AWS | Peering
   ansible.builtin.include_tasks: aws-peer.yml
   with_items: "{{ item_vpc.peers | d([]) }}"
   loop_control:
     loop_var: item_peer
   tags: peering
 
-- name: AWS | VPC Subnet
+- name: AWS | Subnet
   ansible.builtin.include_tasks: aws-subnet.yml
   register: ret_subnet
   with_items: "{{ item_vpc.subnets }}"
@@ -53,15 +53,15 @@
     loop_var: item_subnet
   tags: subnets
 
-- name: AWS | VPC Internet Gateway
+- name: AWS | Internet Gateway
   ansible.builtin.include_tasks: aws-igw.yml
   when: item_vpc.internet_gateway | d(false)
 
-- name: AWS | VPC Carrier Gateway
+- name: AWS | Carrier Gateway
   ansible.builtin.include_tasks: aws-cagw.yml
   when: item_vpc.carrier_gateway | d(false)
 
-- name: AWS | VPC NAT Gateway
+- name: AWS | NAT Gateway
   ansible.builtin.include_tasks: aws-natgw.yml
   with_items: "{{ item_vpc.nat_gateways | d([]) }}"
   loop_control:
@@ -71,10 +71,10 @@
   ansible.builtin.include_tasks: aws-vpn.yml
   when: item_vpc.vpn_connections is defined
 
-- name: AWS | VPC Routing
+- name: AWS | Routing
   ansible.builtin.include_tasks: aws-routing.yml
 
-- name: AWS | VPC Security Groups
+- name: AWS | Security Groups
   ansible.builtin.include_tasks: aws-sg.yml
   when: item_vpc.security_groups is defined
   tags: sg
@@ -87,10 +87,10 @@
     loop_var: item_vpces
   tags: vpce
 
-- name: VPC | Update Global states
+- name: AWS | VPC | Update Global states
   ansible.builtin.set_fact:
     cloud_networks_state: "{{ cloud_networks_state + [cloud_network_state] }}"
 
-- name: VPC | Show Global State
+- name: AWS | VPC | Show Global State
   ansible.builtin.debug:
     var: cloud_networks_state

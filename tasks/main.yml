@@ -1,10 +1,10 @@
 ---
 
-- name: Init state var
+- name: Set initial state
   ansible.builtin.set_fact:
     cloud_networks_state: []
 
-- name: Start setup the network for a specific provider
+- name: Setup networks for each provider
   ansible.builtin.include_tasks: "{{ item_vpc.provider }}.yml"
   with_items: "{{ cloud_networks | d([]) }}"
   loop_control:

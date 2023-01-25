@@ -6,6 +6,6 @@
   connection: local
   gather_facts: false
   tasks:
-  - name: Example assertion
-    ansible.builtin.assert:
-      that: true
+    - name: Example assertion
+      ansible.builtin.assert:
+        that: true
