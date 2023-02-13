@@ -2,8 +2,9 @@
 
 - name: OCI | VCN | Init
   ansible.builtin.set_fact:
-    vpc_id: {}
+    vcn_id: {}
     cloud_network_state: {}
+    vcn_subnets: []
 
 - name: OCI | VCN | Create
   oracle.oci.oci_network_vcn:
@@ -20,7 +21,7 @@
 
 - name: OCI | VCN | Get ID
   ansible.builtin.set_fact:
-    vpc_id: "{{ _ret_vcn.vcn.id }}"
+    vcn_id: "{{ _ret_vcn.vcn.id }}"
     cloud_network_state: "{{ cloud_network_state
         | combine({
             'id': _ret_vcn.vcn.id,
@@ -29,12 +30,27 @@
       }}"
   tags: sg, always
 
+- name: OCI | VCN | Create security lists
+  oracle.oci.oci_network_security_list: "{{ seclist.spec | combine({
+    \"compartment_id\": item_vpc.compartment_id, \
+    \"vcn_id\": vcn_id \
+    }) }}"
+  loop: "{{ item_vpc.security_lists }}"
+  loop_control:
+    loop_var: seclist
+  register: _seclists
+
+# - ansible.builtin.include_tasks: "./oci/security_list.yaml"
+#   loop: "{{ item_vpc.security_lists }}"
+#   loop_control:
+#     loop_var: seclist
+
 - debug: var=_ret_vcn2
 
 - name: OCI | VCN | Create IGW
   oracle.oci.oci_network_internet_gateway: "{{ item_vpc.internet_gateway.spec | combine({
     \"compartment_id\": item_vpc.compartment_id, \
-    \"vcn_id\": vpc_id \
+    \"vcn_id\": vcn_id \
     }) }}"
   register: _ret_igw
 
@@ -48,7 +64,7 @@
   register: _ret_rtb_pub
   oracle.oci.oci_network_route_table: "{{ item_rtb.spec | combine({
     \"compartment_id\": item_vpc.compartment_id, \
-    \"vcn_id\": vpc_id, \
+    \"vcn_id\": vcn_id, \
     \"route_rules\": [item_rtb.route_rules[0].spec | combine({
         \"network_entity_id\": _ret_igw.internet_gateway.id })]
     }) }}"
@@ -73,31 +89,15 @@
     rtb_public_id: "{{ _ret_rtb_pub.results[0].route_table.id }}"
     # rtb_private_id: "{{ _ret_rtb_priv.route_table.id }}"
 
-- name: OCI | VCN | Create Public subnet
-  with_items: "{{ item_vpc.subnets }}"
+- ansible.builtin.include_tasks: "./oci/subnet.yaml"
+  loop: "{{ item_vpc.subnets }}"
   loop_control:
-    loop_var: item_subnet
-  # when: item_subnet.public == "yes"
-  oracle.oci.oci_network_subnet: "{{ item_subnet.spec | combine({
-    \"compartment_id\": item_vpc.compartment_id, \
-    \"vcn_id\": vpc_id, \
-    \"route_table_id\": rtb_public_id
-    }) }}"
-  register: _ret_subnet_pub
+    loop_var: subnet
 
-# - name: OCI | VCN | Create Private subnet
-#   with_items: "{{ item_vpc.subnets }}"
-#   loop_control:
-#     loop_var: item_subnet
-#   when: item_rtb.public == "no"
-#   oracle.oci.oci_network_subnet: "{{ item_subnet.spec | combine({
-#     \"compartment_id\": item_vpc.compartment_id, \
-#     \"vcn_id\": vpc_id, \
-#     \"route_table_id\": rtb_private_id
-#     }) }}"
-#   register: _ret_subnet_pvt
-
-- debug: var=_ret_subnet_pub
+- ansible.builtin.include_tasks: "./oci/nsg.yaml"
+  loop: "{{ item_vpc.network_security_groups }}"
+  loop_control:
+    loop_var: nsg
 
 - name: OCI | VCN | Update Global states
   ansible.builtin.set_fact:
@@ -106,7 +106,7 @@
 - name: OCI | VCN | Show Net sec
   # when: item_subnet.public == "yes"
   oracle.oci.oci_network_security_group_facts:
-    vcn_id: "{{ vpc_id }}"
+    vcn_id: "{{ vcn_id }}"
     compartment_id: "{{ item_vpc.compartment_id }}"
   register: _ret_netsec
 
