@@ -11,6 +11,9 @@
     tags: "{{ item_vpc.igw.tags | d({}) | combine(igw_tag_name) }}"
     purge_tags: "{{ item_vpc.igw.purge_tags | d('no') }}"
   register: ret_igw
+  until: "ret_igw is not failed"
+  retries: 5
+  delay: 5
 
 - name: AWS | IGW | Save state
   ansible.builtin.set_fact:

@@ -1,31 +1,31 @@
 ---
-- name: AWS | VPC Route Table | Init
+- name: AWS | Route Table | Init
   ansible.builtin.set_fact:
     rtb_routes: []
     rtb_subnets: []
 
-- name: AWS | VPC Route Table | Map NATGW to it's ID
+- name: AWS | Route Table | Map NatGW
   ansible.builtin.set_fact:
     rtb_routes: "{{ rtb_routes + [{'dest': item.dest,
           'gateway_id': gateways.natgw[item.target]}] }}"
   when: item.gw_type is defined and item.gw_type == 'natgw'
   with_items: "{{ item_rtb.routes | d([]) }}"
 
-- name: AWS | VPC Route Table | Map IGW to it's ID
+- name: AWS | Route Table | Map IGW
   ansible.builtin.set_fact:
     rtb_routes: "{{ rtb_routes + [{'dest': item.dest,
           'gateway_id': gateways.igw}] }}"
   when: item.gw_type is defined and item.gw_type == 'igw'
   with_items: "{{ item_rtb.routes | d([]) }}"
 
-- name: AWS | VPC Route Table | Map CAGW to it's ID
+- name: AWS | Route Table | Map CaGW
   ansible.builtin.set_fact:
     rtb_routes: "{{ rtb_routes + [{'dest': item.dest,
           'gateway_id': gateways.cagw}] }}"
   when: item.gw_type is defined and item.gw_type == 'cagw'
   with_items: "{{ item_rtb.routes | d([]) }}"
 
-- name: AWS | VPC Route Table | Map Peerings to it's ID"
+- name: AWS | Route Table | Map Peerings
   ansible.builtin.set_fact:
     rtb_routes: "{{ rtb_routes + [{'dest': item.dest,
           'gateway_id': vpc_peers | json_query(rt_query) | join(' ')}] }}"
@@ -34,7 +34,7 @@
   when: item.gw_type is defined and item.gw_type == 'peering'
   with_items: "{{ item_rtb.routes | d([]) }}"
 
-- name: AWS | VPC Route Table | Set route table's subnets
+- name: AWS | Route Table | Map subnets
   ansible.builtin.set_fact:
     rtb_subnets: "{{ rtbs | json_query(rt_query) }}"
   vars:
@@ -42,11 +42,11 @@
   when: item.name == item_rtb.name
   with_items: "{{ rtbs }}"
 
-- name: AWS | VPC Route Table | Set route table's subnets
+- name: AWS | Route Table | Set subnets
   ansible.builtin.set_fact:
     rtb_subnets: "{{ rtb_subnets[0] }}"
 
-- name: AWS | VPC Route Table | associate subnets {{ item_rtb.name }}
+- name: AWS | Route Table | Associate {{ item_rtb.name }}
   amazon.aws.ec2_vpc_route_table:
     region: "{{ item_vpc.region }}"
     vpc_id: "{{ vpc_id }}"

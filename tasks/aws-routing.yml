@@ -1,5 +1,5 @@
 ---
-- name: AWS | VPC Route Tables | lookup route tables and it's subnets
+- name: AWS | Route Tables | lookup tables and subnets
   ansible.builtin.set_fact:
     rtbs: "{{ rtbs + [{'name': item,
           'subnets': vpc_subnets | json_query(rt_query) | unique}] }}"
@@ -7,7 +7,7 @@
     rt_query: "[?route_table=='{{ item }}'].subnet_id"
   with_items: "{{ rtbs_vpc | union(subnets_rtbs) | unique }}"
 
-- name: AWS | VPC Route Tables
+- name: AWS | Route Tables | Create
   ansible.builtin.include_tasks: aws-rtb.yml
   with_items: "{{ item_vpc.route_tables | d([]) }}"
   loop_control:
