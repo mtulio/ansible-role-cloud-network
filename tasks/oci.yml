@@ -5,6 +5,7 @@
     vcn_id: {}
     cloud_network_state: {}
     vcn_subnets: []
+    vcn_route_tables: []
 
 - name: OCI | VCN | Create
   oracle.oci.oci_network_vcn:
@@ -47,54 +48,62 @@
 
 - debug: var=_ret_vcn2
 
-- name: OCI | VCN | Create IGW
+- name: OCI | VCN | IGW | Create
   oracle.oci.oci_network_internet_gateway: "{{ item_vpc.internet_gateway.spec | combine({
     \"compartment_id\": item_vpc.compartment_id, \
     \"vcn_id\": vcn_id \
     }) }}"
   register: _ret_igw
 
+- name: OCI | VCN | NatGW | Create
+  oracle.oci.oci_network_nat_gateway: "{{ item_vpc.nat_gateway.spec | combine({
+    \"compartment_id\": item_vpc.compartment_id, \
+    \"vcn_id\": vcn_id \
+    }) }}"
+  register: _ret_natgw
+
+
+# TODO creeate Nat Gateway
+- name: OCI | VCN | Create Private Route Table
+  # with_items: "{{ item_vpc.route_tables }}"
+  # loop_control:
+  #   loop_var: item_rtb
+  # when: item_rtb.public == "no"
+  register: _ret_rtb_priv
+  oracle.oci.oci_network_route_table: "{{ item_vpc.route_table_private.spec | combine({
+    \"compartment_id\": item_vpc.compartment_id, \
+    \"vcn_id\": vcn_id, \
+    \"route_rules\": [item_vpc.route_table_private.route_rules[0].spec | combine({
+        \"network_entity_id\": _ret_natgw.nat_gateway.id })]
+    }) }}"
+
 # TODO: create route tables
 
 - name: OCI | VCN | Create Public Route Table
-  with_items: "{{ item_vpc.route_tables }}"
-  loop_control:
-    loop_var: item_rtb
+  # with_items: "{{ item_vpc.route_tables }}"
+  # loop_control:
+  #   loop_var: item_rtb
   # when: item_rtb.public == "yes"
   register: _ret_rtb_pub
-  oracle.oci.oci_network_route_table: "{{ item_rtb.spec | combine({
+  oracle.oci.oci_network_route_table: "{{ item_vpc.route_table_public.spec | combine({
     \"compartment_id\": item_vpc.compartment_id, \
     \"vcn_id\": vcn_id, \
-    \"route_rules\": [item_rtb.route_rules[0].spec | combine({
+    \"route_rules\": [item_vpc.route_table_public.route_rules[0].spec | combine({
         \"network_entity_id\": _ret_igw.internet_gateway.id })]
     }) }}"
 
-# TODO creeate Nat Gateway
-# - name: OCI | VCN | Create Private Route Table
-#   with_items: "{{ item_vpc.route_tables }}"
-#   loop_control:
-#     loop_var: item_rtb
-#   when: item_rtb.public == "no"
-#   register: _ret_rtb_priv
-#   oracle.oci.oci_network_route_table: "{{ item_rtb.spec | combine({
-#     \"compartment_id\": item_vpc.compartment_id, \
-#     \"vcn_id\": vpc_id, \
-#     \"route_rules\": [item_rtb.route_rules[0].spec | combine({
-#         \"network_entity_id\": _ret_natgw.nat_gateway.id })]
-#     }) }}"
 
 - debug: var=_ret_rtb_pub
+- debug: var=_ret_rtb_priv
 
-- ansible.builtin.set_fact:
-    rtb_public_id: "{{ _ret_rtb_pub.results[0].route_table.id }}"
-    # rtb_private_id: "{{ _ret_rtb_priv.route_table.id }}"
-
-- ansible.builtin.include_tasks: "./oci/subnet.yaml"
+- name: OCI | VCN | Create Subnets
+  ansible.builtin.include_tasks: "./oci/subnet.yaml"
   loop: "{{ item_vpc.subnets }}"
   loop_control:
     loop_var: subnet
 
-- ansible.builtin.include_tasks: "./oci/nsg.yaml"
+- name: OCI | VCN | Create NSG
+  ansible.builtin.include_tasks: "./oci/nsg.yaml"
   loop: "{{ item_vpc.network_security_groups }}"
   loop_control:
     loop_var: nsg

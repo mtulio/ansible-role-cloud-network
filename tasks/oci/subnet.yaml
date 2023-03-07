@@ -1,8 +1,8 @@
 ---
-- name: OCI | VCN | Subnet | Show
+- name: OCI | Subnet | Show
   debug: var=subnet
 
-- name: OCI | VCN | Subnet | Init
+- name: OCI | Subnet | Init
   ansible.builtin.set_fact:
     subnet_rtb_id: ''
     subnet_seclist_ids: []
@@ -11,24 +11,31 @@
 
 ## Route Table
 
-- name: OCI | VCN | Subnet | Get tables
-  oracle.oci.oci_network_route_table_facts:
-    compartment_id: "{{ item_vpc.compartment_id }}"
-    vcn_id: "{{ vcn_id }}"
-    display_name: "{{ subnet.route_table_name }}"
-  register: _rtb
-  when: subnet.route_table_name is defined
+# - name: OCI | VCN | Subnet | Get tables
+#   oracle.oci.oci_network_route_table_facts:
+#     compartment_id: "{{ item_vpc.compartment_id }}"
+#     vcn_id: "{{ vcn_id }}"
+#     display_name: "{{ subnet.route_table_name }}"
+#   register: _rtb
+#   when: subnet.route_table_name is defined
 
-- name: subnet set subnet_rtb_id
+- debug: var=subnet
+
+- name: OCI | Subnet | Set Rtb ID Pub
   ansible.builtin.set_fact:
-    subnet_rtb_id: "{{ _rtb.route_tables[0].id }}"
-  when: _rtb.route_tables | length > 0
+    subnet_rtb_id: "{{ _ret_rtb_pub.route_table.id }}"
+  when: subnet.public
+
+- name: OCI | Subnet | Set Rtb ID Priv
+  ansible.builtin.set_fact:
+    subnet_rtb_id: "{{ _ret_rtb_priv.route_table.id }}"
+  when: not(subnet.public)
 
 - debug: var=subnet_rtb_id
 
 ## Security List
 
-- name: OCI | VCN | Subnet | Get Sec Lists
+- name: OCI | Subnet | Get Sec Lists
   oracle.oci.oci_network_security_list_facts:
     compartment_id: "{{ item_vpc.compartment_id }}"
     vcn_id: "{{ vcn_id }}"
@@ -40,7 +47,7 @@
 
 - debug: var=_sb_seclists
 
-- name: OCI | VCN | Subnet | Set SecListID
+- name: OCI | Subnet | Set SecListID
   ansible.builtin.set_fact:
     subnet_seclist_ids: "{{ subnet_seclist_ids + [sb_seclist.security_lists[0].id] }}"
   # var:
@@ -61,7 +68,7 @@
 
 ## Subnet
 
-- name: OCI | VCN | Create subnet
+- name: OCI | Create subnet
   # with_items: "{{ item_vpc.subnets }}"
   # loop_control:
   #   loop_var: item_subnet
