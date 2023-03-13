@@ -1,7 +1,8 @@
 ---
 
 - name: Create oci_network_security_group
-  oracle.oci.oci_network_security_group: '{{ nsg.spec | combine({
+  oracle.oci.oci_network_security_group:
+  args: '{{ nsg.spec | combine({
     "compartment_id": item_vpc.compartment_id,
     "vcn_id": vcn_id
     }) }}'
@@ -12,7 +13,8 @@
     nsg_id: "{{ _nsg.network_security_group.id }}"
 
 - name: Create oci_network_security_group_security_rule_actions
-  oracle.oci.oci_network_security_group_security_rule_actions: '{{ nsg.rules.spec | combine({
+  oracle.oci.oci_network_security_group_security_rule_actions:
+  args: '{{ nsg.rules.spec | combine({
     "network_security_group_id": nsg_id,
     "action": "add"
     }) }}'

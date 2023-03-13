@@ -32,7 +32,8 @@
   tags: sg, always
 
 - name: OCI | VCN | Create security lists
-  oracle.oci.oci_network_security_list: "{{ seclist.spec | combine({
+  oracle.oci.oci_network_security_list: 
+  args: "{{ seclist.spec | combine({
     \"compartment_id\": item_vpc.compartment_id, \
     \"vcn_id\": vcn_id \
     }) }}"
@@ -49,14 +50,16 @@
 - debug: var=_ret_vcn2
 
 - name: OCI | VCN | IGW | Create
-  oracle.oci.oci_network_internet_gateway: "{{ item_vpc.internet_gateway.spec | combine({
+  oracle.oci.oci_network_internet_gateway:
+  args: "{{ item_vpc.internet_gateway.spec | combine({
     \"compartment_id\": item_vpc.compartment_id, \
     \"vcn_id\": vcn_id \
     }) }}"
   register: _ret_igw
 
 - name: OCI | VCN | NatGW | Create
-  oracle.oci.oci_network_nat_gateway: "{{ item_vpc.nat_gateway.spec | combine({
+  oracle.oci.oci_network_nat_gateway:
+  args: "{{ item_vpc.nat_gateway.spec | combine({
     \"compartment_id\": item_vpc.compartment_id, \
     \"vcn_id\": vcn_id \
     }) }}"
@@ -70,7 +73,8 @@
   #   loop_var: item_rtb
   # when: item_rtb.public == "no"
   register: _ret_rtb_priv
-  oracle.oci.oci_network_route_table: "{{ item_vpc.route_table_private.spec | combine({
+  oracle.oci.oci_network_route_table:
+  args: "{{ item_vpc.route_table_private.spec | combine({
     \"compartment_id\": item_vpc.compartment_id, \
     \"vcn_id\": vcn_id, \
     \"route_rules\": [item_vpc.route_table_private.route_rules[0].spec | combine({
@@ -85,7 +89,8 @@
   #   loop_var: item_rtb
   # when: item_rtb.public == "yes"
   register: _ret_rtb_pub
-  oracle.oci.oci_network_route_table: "{{ item_vpc.route_table_public.spec | combine({
+  oracle.oci.oci_network_route_table:
+  args: "{{ item_vpc.route_table_public.spec | combine({
     \"compartment_id\": item_vpc.compartment_id, \
     \"vcn_id\": vcn_id, \
     \"route_rules\": [item_vpc.route_table_public.route_rules[0].spec | combine({
