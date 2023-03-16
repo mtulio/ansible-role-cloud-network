@@ -1,25 +1,12 @@
 ---
 - name: OCI | Subnet | Show
-  debug: var=subnet
+  debug:
+    var: subnet
 
 - name: OCI | Subnet | Init
   ansible.builtin.set_fact:
     subnet_rtb_id: ''
     subnet_seclist_ids: []
-    # clean temp result vars
-    _rtb: ''
-
-## Route Table
-
-# - name: OCI | VCN | Subnet | Get tables
-#   oracle.oci.oci_network_route_table_facts:
-#     compartment_id: "{{ item_vpc.compartment_id }}"
-#     vcn_id: "{{ vcn_id }}"
-#     display_name: "{{ subnet.route_table_name }}"
-#   register: _rtb
-#   when: subnet.route_table_name is defined
-
-- debug: var=subnet
 
 - name: OCI | Subnet | Set Rtb ID Pub
   ansible.builtin.set_fact:
@@ -31,10 +18,6 @@
     subnet_rtb_id: "{{ _ret_rtb_priv.route_table.id }}"
   when: not(subnet.public)
 
-- debug: var=subnet_rtb_id
-
-## Security List
-
 - name: OCI | Subnet | Get Sec Lists
   oracle.oci.oci_network_security_list_facts:
     compartment_id: "{{ item_vpc.compartment_id }}"
@@ -45,8 +28,6 @@
   loop_control:
     loop_var: sb_seclist_name
 
-- debug: var=_sb_seclists
-
 - name: OCI | Subnet | Set SecListID
   ansible.builtin.set_fact:
     subnet_seclist_ids: "{{ subnet_seclist_ids + [sb_seclist.security_lists[0].id] }}"
@@ -56,29 +37,20 @@
   loop_control:
     loop_var: sb_seclist
 
-  # ansible.builtin.set_fact:
-  #   rtb_routes: "{{ rtb_routes + [{'dest': item.dest,
-  #         'gateway_id': vpc_peers | json_query(rt_query) | join(' ')}] }}"
-  # vars:
-  #   rt_query: "[?name=='{{ item.target }}'].id"
-  # when: item.gw_type is defined and item.gw_type == 'peering'
-  # with_items: "{{ item_rtb.routes | d([]) }}"
-
-- debug: var=subnet_seclist_ids
-
-## Subnet
-
 - name: OCI | Create subnet
-  # with_items: "{{ item_vpc.subnets }}"
-  # loop_control:
-  #   loop_var: item_subnet
-  oracle.oci.oci_network_subnet: '{{ subnet.spec | combine({
-    "compartment_id": item_vpc.compartment_id, \
-    "vcn_id": vcn_id, \
-    "route_table_id": subnet_rtb_id,
-    "security_list_ids": subnet_seclist_ids
-    }) }}'
+  oracle.oci.oci_network_subnet:
+  args: "{{ subnet.spec | combine(_patch, recursive=True) }}"
+  vars:
+    _patch:
+      compartment_id: "{{ item_vpc.compartment_id }}"
+      vcn_id: "{{ vcn_id }}"
+      route_table_id: "{{ subnet_rtb_id }}"
+      security_list_ids: "{{ subnet_seclist_ids }}"
   register: _subnet
 
 - ansible.builtin.set_fact:
-    vcn_subnets: "{{ vcn_subnets + [_subnet.subnet] }}"
+    subnets: "{{ subnets + _data }}"
+  vars:
+    _data:
+    - state: "{{ _subnet.subnet }}"
+      public: "{{ subnet.public }}"

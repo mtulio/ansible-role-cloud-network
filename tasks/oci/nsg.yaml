@@ -1,21 +1,15 @@
 ---
 
-- name: Create oci_network_security_group
+- name: OCI | NSG | Create oci_network_security_group
   oracle.oci.oci_network_security_group:
-  args: '{{ nsg.spec | combine({
-    "compartment_id": item_vpc.compartment_id,
-    "vcn_id": vcn_id
-    }) }}'
+  args: "{{ nsg.spec | combine(_ids_vcn_compartment, recursive=True) }}"
   register: _nsg
 
-- name: nsg id
-  ansible.builtin.set_fact:
-    nsg_id: "{{ _nsg.network_security_group.id }}"
-
-- name: Create oci_network_security_group_security_rule_actions
+- name: OCI | NSG | Create Rules
   oracle.oci.oci_network_security_group_security_rule_actions:
-  args: '{{ nsg.rules.spec | combine({
-    "network_security_group_id": nsg_id,
-    "action": "add"
-    }) }}'
+  args: "{{ nsg.rules.spec| combine(_patch, recursive=True) }}"
+  vars:
+    _patch:
+      network_security_group_id: "{{ _nsg.network_security_group.id }}"
+      action: add
   register: _nsg

@@ -89,7 +89,7 @@
 
 - name: AWS | VPC | Update Global states
   ansible.builtin.set_fact:
-    cloud_networks_state: "{{ cloud_networks_state + [cloud_network_state] }}"
+    cloud_networks_state: "{{ cloud_networks_state | d([]) + [cloud_network_state] }}"
 
 - name: AWS | VPC | Show Global State
   ansible.builtin.debug:
