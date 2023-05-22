@@ -25,6 +25,9 @@
     wait: "{{ natgw.wait | d(true) }}"
     tags: "{{ natgw.tags | d({}) | combine({'Name': natgw.name}) }}"
   register: ret_natgw
+  until: "ret_natgw is not failed"
+  retries: 5
+  delay: 3
 
 - name: AWS | NAT GW | Save state
   ansible.builtin.set_fact:
