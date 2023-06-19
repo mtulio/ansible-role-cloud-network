@@ -31,11 +31,10 @@
 - name: OCI | Subnet | Set SecListID
   ansible.builtin.set_fact:
     subnet_seclist_ids: "{{ subnet_seclist_ids + [sb_seclist.security_lists[0].id] }}"
-  # var:
-  #   query: "[?name=='{{ item.target }}'].id"
   loop: "{{ _sb_seclists.results }}"
   loop_control:
     loop_var: sb_seclist
+  no_log: true
 
 - name: OCI | Create subnet
   oracle.oci.oci_network_subnet:

@@ -94,3 +94,4 @@
 - name: AWS | VPC | Show Global State
   ansible.builtin.debug:
     var: cloud_networks_state
+  when: debug | d(false)
