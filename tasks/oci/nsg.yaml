@@ -1,0 +1,15 @@
+---
+
+- name: OCI | NSG | Create oci_network_security_group
+  oracle.oci.oci_network_security_group:
+  args: "{{ nsg.spec | combine(_ids_vcn_compartment, recursive=True) }}"
+  register: _nsg
+
+- name: OCI | NSG | Create Rules
+  oracle.oci.oci_network_security_group_security_rule_actions:
+  args: "{{ nsg.rules.spec| combine(_patch, recursive=True) }}"
+  vars:
+    _patch:
+      network_security_group_id: "{{ _nsg.network_security_group.id }}"
+      action: add
+  register: _nsg

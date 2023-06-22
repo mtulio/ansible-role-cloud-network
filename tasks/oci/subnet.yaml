@@ -1,0 +1,55 @@
+---
+- name: OCI | Subnet | Show
+  debug:
+    var: subnet
+
+- name: OCI | Subnet | Init
+  ansible.builtin.set_fact:
+    subnet_rtb_id: ''
+    subnet_seclist_ids: []
+
+- name: OCI | Subnet | Set Rtb ID Pub
+  ansible.builtin.set_fact:
+    subnet_rtb_id: "{{ _ret_rtb_pub.route_table.id }}"
+  when: subnet.public
+
+- name: OCI | Subnet | Set Rtb ID Priv
+  ansible.builtin.set_fact:
+    subnet_rtb_id: "{{ _ret_rtb_priv.route_table.id }}"
+  when: not(subnet.public)
+
+- name: OCI | Subnet | Get Sec Lists
+  oracle.oci.oci_network_security_list_facts:
+    compartment_id: "{{ item_vpc.compartment_id }}"
+    vcn_id: "{{ vcn_id }}"
+    display_name: "{{ sb_seclist_name }}"
+  register: _sb_seclists
+  loop: "{{ subnet.security_list_names  }}"
+  loop_control:
+    loop_var: sb_seclist_name
+
+- name: OCI | Subnet | Set SecListID
+  ansible.builtin.set_fact:
+    subnet_seclist_ids: "{{ subnet_seclist_ids + [sb_seclist.security_lists[0].id] }}"
+  loop: "{{ _sb_seclists.results }}"
+  loop_control:
+    loop_var: sb_seclist
+  no_log: true
+
+- name: OCI | Create subnet
+  oracle.oci.oci_network_subnet:
+  args: "{{ subnet.spec | combine(_patch, recursive=True) }}"
+  vars:
+    _patch:
+      compartment_id: "{{ item_vpc.compartment_id }}"
+      vcn_id: "{{ vcn_id }}"
+      route_table_id: "{{ subnet_rtb_id }}"
+      security_list_ids: "{{ subnet_seclist_ids }}"
+  register: _subnet
+
+- ansible.builtin.set_fact:
+    subnets: "{{ subnets + _data }}"
+  vars:
+    _data:
+    - state: "{{ _subnet.subnet }}"
+      public: "{{ subnet.public }}"

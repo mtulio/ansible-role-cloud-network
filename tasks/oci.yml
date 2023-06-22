@@ -1,0 +1,106 @@
+---
+
+- name: OCI | VCN | Init
+  ansible.builtin.set_fact:
+    vcn_id: {}
+    cloud_network_state: {}
+    subnets: []
+    route_tables: []
+
+- name: OCI | VCN | Create
+  oracle.oci.oci_network_vcn:
+    state: present
+    region: "{{ item_vpc.region }}"
+    display_name: "{{ item_vpc.name }}"
+    compartment_id: "{{ oci_compartment_id }}"
+    cidr_block: "{{ item_vpc.block }}"
+    dns_label: "{{ item_vpc.spec_vcn.dns_label }}"
+  register: _vcn
+  tags: always
+
+- name: OCI | VCN | Get ID
+  ansible.builtin.set_fact:
+    vcn_id: "{{ _vcn.vcn.id }}"
+    _ids_vcn_compartment:
+      compartment_id: "{{ item_vpc.compartment_id }}"
+      vcn_id: "{{ _vcn.vcn.id }}"
+  tags: sg, always
+
+- name: OCI | VCN | Create security lists
+  oracle.oci.oci_network_security_list: 
+  args: "{{ seclist.spec | combine(_ids_vcn_compartment, recursive=True) }}"
+  loop: "{{ item_vpc.security_lists }}"
+  loop_control:
+    loop_var: seclist
+  register: _seclists
+
+- name: OCI | VCN | IGW | Create
+  oracle.oci.oci_network_internet_gateway:
+  args: "{{ item_vpc.internet_gateway.spec | combine(_ids_vcn_compartment, recursive=True) }}"
+  register: _ret_igw
+
+- name: OCI | VCN | NatGW | Create
+  oracle.oci.oci_network_nat_gateway:
+  args: "{{ item_vpc.nat_gateway.spec | combine(_ids_vcn_compartment, recursive=True) }}"
+  register: _ret_natgw
+
+# TODO: currently only two route tables are supported. It would be nice to
+# to provide flexibility to user define the number they wants (check AWS).
+- name: OCI | VCN | Create Private Route Table
+  register: _ret_rtb_priv
+  oracle.oci.oci_network_route_table:
+  args: "{{ item_vpc.route_table_private.spec | combine({
+    'compartment_id': item_vpc.compartment_id, \
+    'vcn_id': vcn_id, \
+    'route_rules': [item_vpc.route_table_private.route_rules[0].spec | combine({
+        'network_entity_id': _ret_natgw.nat_gateway.id })]
+    }) }}"
+
+- name: OCI | VCN | Create Public Route Table
+  register: _ret_rtb_pub
+  oracle.oci.oci_network_route_table:
+  args: "{{ item_vpc.route_table_public.spec | combine({
+    \"compartment_id\": item_vpc.compartment_id, \
+    \"vcn_id\": vcn_id, \
+    \"route_rules\": [item_vpc.route_table_public.route_rules[0].spec | combine({
+        \"network_entity_id\": _ret_igw.internet_gateway.id })]
+    }) }}"
+
+- name: OCI | VCN | Create Subnets
+  ansible.builtin.include_tasks: "./oci/subnet.yaml"
+  loop: "{{ item_vpc.subnets }}"
+  loop_control:
+    loop_var: subnet
+
+- name: OCI | VCN | Create NSG
+  ansible.builtin.include_tasks: "./oci/nsg.yaml"
+  loop: "{{ item_vpc.network_security_groups }}"
+  loop_control:
+    loop_var: nsg
+
+- name: OCI | VCN | Show Net sec
+  oracle.oci.oci_network_security_group_facts:
+    vcn_id: "{{ vcn_id }}"
+    compartment_id: "{{ item_vpc.compartment_id }}"
+  register: _ret_netsec
+
+- name: OCI | VCN | Get ID
+  ansible.builtin.set_fact:
+    vcn_id: "{{ _vcn.vcn.id }}"
+    cloud_network_state: "{{ cloud_network_state | combine(_patch, recursive=True) }}"
+  vars:
+    _patch:
+      id: "{{ _vcn.vcn.id }}"
+      spec: "{{ _vcn.vcn }}"
+      subnets: "{{ subnets }}"
+      route_table_public: "{{ _ret_rtb_pub.route_table }}"
+      route_table_private: "{{ _ret_rtb_priv.route_table }}"
+
+- name: OCI | VCN | Update Global states
+  ansible.builtin.set_fact:
+    cloud_networks_state: "{{ cloud_networks_state | d([]) + [cloud_network_state] }}"
+
+- name: OCI | VCN | Show Global State
+  ansible.builtin.debug:
+    var: cloud_networks_state
+  when: debug | d(false)
